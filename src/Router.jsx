@@ -6,7 +6,6 @@ import LibraryPage from "./pages/LibraryPage";
 import NitroPage from "./pages/NitroPage";
 import ShopPage from "./pages/ShopPage";
 import LoginPage from "./pages/LoginPage";
-import PrivateRoute from "./routes/PrivateRoute";
 import FriendsChatPage from "./pages/FriendsChatPage";
 import SettingsPage from "./pages/SettingsPage";
 import RegisterPage from "./pages/RegisterPage";
