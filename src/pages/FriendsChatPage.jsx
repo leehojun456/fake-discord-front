@@ -16,6 +16,7 @@ import ChatProfileImage from "../components/chat/chatProfileImage";
 import ChatName from "../components/chat/chatName";
 import BigProfileCard from "../components/user/BigProfileCard";
 import Linkify from "../components/chat/Linkify";
+import Messages from "../components/chat/messages";
 
 const FriendsChatPage = () => {
   const [showProfile, setShowProfile] = useState(false);
@@ -157,31 +158,36 @@ const FriendsChatPage = () => {
           <div>{chatUsers[0]?.user.name}</div>
         </div>
         <div className="flex gap-6">
-          <FontAwesomeIcon icon={faComment} className="cursor-pointer" />
-          <FontAwesomeIcon icon={faComment} className="cursor-pointer" />
-          <FontAwesomeIcon
-            icon={faCircleUser}
-            className="cursor-pointer"
-            color={showProfile ? "white" : "gray"}
-            onClick={() => {
-              setShowProfile(!showProfile);
+          <div>
+            <FontAwesomeIcon icon={faComment} className="cursor-pointer" />
+          </div>
+          <div>
+            <FontAwesomeIcon icon={faComment} className="cursor-pointer" />
+          </div>
+          <div className="cursor-pointer max-xl:hidden">
+            <FontAwesomeIcon
+              icon={faCircleUser}
+              color={showProfile ? "white" : "gray"}
+              onClick={() => {
+                setShowProfile(!showProfile);
 
-              // localStorage에 showProfile 값을 저장합니다.
-              localStorage.setItem(
-                "userSettings",
-                JSON.stringify({
-                  ...JSON.parse(localStorage.getItem("userSettings") || "{}"),
-                  showProfile: !showProfile,
-                })
-              );
-            }}
-          />
+                // localStorage에 showProfile 값을 저장합니다.
+                localStorage.setItem(
+                  "userSettings",
+                  JSON.stringify({
+                    ...JSON.parse(localStorage.getItem("userSettings") || "{}"),
+                    showProfile: !showProfile,
+                  })
+                );
+              }}
+            />
+          </div>
         </div>
       </div>
       {/* 채팅창 영역 */}
       <div className="flex flex-1 overflow-hidden select-text">
         <div className="w-full flex flex-col">
-          <div className="w-full flex flex-col justify-end basis-full grow-0 overflow-hidden">
+          <div className="w-full flex flex-col justify-end  overflow-hidden">
             <div className="overflow-y-auto m-1">
               {chat.map((userChat, index) => {
                 return (
@@ -194,29 +200,12 @@ const FriendsChatPage = () => {
 
                     {userChat.messages.map((message, index) => {
                       return (
-                        <div className="flex gap-2 hover:bg-zinc-700 px-2">
-                          <ChatProfileImage
-                            userChat={userChat}
-                            chatUsers={chatUsers}
-                            index={index}
-                          />
-                          <div className="flex flex-col">
-                            <div
-                              className={`flex gap-2 items-center ${
-                                index !== 0 && "hidden"
-                              }`}
-                            >
-                              <ChatName
-                                userChat={userChat}
-                                chatUsers={chatUsers}
-                              />
-                              <div className="text-xs text-zinc-400">
-                                {formatDate(userChat.date)}
-                              </div>
-                            </div>
-                            <Linkify text={message.content} />
-                          </div>
-                        </div>
+                        <Messages
+                          message={message}
+                          userChat={userChat}
+                          key={index}
+                          index={index}
+                        />
                       );
                     })}
                   </div>

@@ -1,15 +1,7 @@
-import { Link, NavLink } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import axios from "../../axios";
 import { useContext, useEffect, useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faGear,
-  faHeadphonesSimple,
-  faMicrophone,
-} from "@fortawesome/free-solid-svg-icons";
-import SettingsPage from "../../pages/SettingsPage";
 import { AuthContext } from "../../contexts/AuthContext";
-import CircleProfileWithStatus from "../user/CircleProfileWithStatus";
 
 const PersonalChannels = () => {
   const [personalChannels, setPersonalChannels] = useState([]);

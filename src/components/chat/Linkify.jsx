@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "../../axios";
+import ImageViewerDialog from "../dialog/chat/ImageViewerDialog";
 
 function isValidImage(url) {
   return new Promise((resolve) => {
@@ -13,6 +14,7 @@ function isValidImage(url) {
 function Linkify({ text }) {
   const urlPattern = /(\bhttps?:\/\/[^\s]+|\bwww\.[^\s]+)/gi;
   const [linkData, setLinkData] = useState({}); // { url: { type: 'image' | 'og' | 'link', og?: {title,desc,image} } }
+  const [ImageViewer, setImageViewer] = useState(false);
 
   useEffect(() => {
     const matches = text.match(urlPattern);
@@ -78,13 +80,18 @@ function Linkify({ text }) {
             return (
               <div key={idx} className="my-2">
                 {originalLink}
-                <a href={href} target="_blank" rel="noopener noreferrer">
-                  <img
-                    src={href}
-                    alt="image"
-                    className="max-w-xs rounded-md inline-block mt-1"
+
+                <img
+                  src={href}
+                  alt="image"
+                  className="max-w-xs rounded-md inline-block mt-1"
+                />
+                {ImageViewer && (
+                  <ImageViewerDialog
+                    image={image}
+                    setImageViewer={setImageViewer}
                   />
-                </a>
+                )}
               </div>
             );
           }
@@ -111,13 +118,20 @@ function Linkify({ text }) {
                   </a>
                   <div className="text-sm text-zinc-300">{description}</div>
                   {image && (
-                    <a href={href} target="_blank">
-                      <img
-                        src={image}
-                        alt="preview"
-                        className="w-full rounded mt-2"
-                      />
-                    </a>
+                    <img
+                      src={image}
+                      alt="preview"
+                      className="w-full rounded mt-2 cursor-pointer"
+                      onClick={() => {
+                        setImageViewer(true);
+                      }}
+                    />
+                  )}
+                  {ImageViewer && (
+                    <ImageViewerDialog
+                      image={image}
+                      setImageViewer={setImageViewer}
+                    />
                   )}
                 </div>
               </div>
@@ -127,7 +141,11 @@ function Linkify({ text }) {
           // fallback
           return originalLink;
         } else {
-          return <span key={idx}>{part}</span>;
+          return (
+            <div key={idx} className="w-full">
+              <div className="break-all">{part}</div>
+            </div>
+          );
         }
       })}
     </>

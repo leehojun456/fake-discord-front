@@ -4,7 +4,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { formatDate } from "../../utils/dateFormat";
 
-const ChatProfileImage = ({ userChat, chatUsers, index }) => {
+const ChatProfileImage = ({ userChat, index }) => {
   const [showProfileCard, setShowProfileCard] = useState(false);
   const portalElement = document.getElementById("root");
   return (
@@ -13,7 +13,7 @@ const ChatProfileImage = ({ userChat, chatUsers, index }) => {
         isOpen={showProfileCard}
         content={
           <ProfileCard
-            userId={userChat.userId}
+            userId={userChat?.userId}
             setShowProfileCard={setShowProfileCard}
           />
         }
@@ -24,7 +24,7 @@ const ChatProfileImage = ({ userChat, chatUsers, index }) => {
       >
         <button
           type="button"
-          className={`w-[40px] rounded-full bg-amber-400 mr-2 cursor-pointer overflow-hidden ${
+          className={`w-[40px]  min-w-[40px]  rounded-full bg-amber-400 mr-2 cursor-pointer overflow-hidden ${
             index !== 0 ? "invisible h-[0px]" : "visible h-[40px]"
           }`}
           onClick={() => {
@@ -32,12 +32,7 @@ const ChatProfileImage = ({ userChat, chatUsers, index }) => {
             setShowProfileCard(true);
           }}
         >
-          <img
-            src={
-              chatUsers.find((data) => data.user.id === userChat.userId)?.user
-                .avatar
-            }
-          />
+          <img src={userChat?.avatar} />
         </button>
       </Popover>
       {showProfileCard && (

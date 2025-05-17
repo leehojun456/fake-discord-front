@@ -4,9 +4,10 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { formatDate } from "../../utils/dateFormat";
 
-const ChatName = ({ userChat, chatUsers }) => {
+const ChatName = ({ userChat }) => {
   const [showProfileCard, setShowProfileCard] = useState(false);
   const portalElement = document.getElementById("root");
+
   return (
     <>
       <Popover
@@ -25,10 +26,7 @@ const ChatName = ({ userChat, chatUsers }) => {
             setShowProfileCard(true);
           }}
         >
-          {
-            chatUsers.find((data) => data.user.id === userChat.userId)?.user
-              .name
-          }
+          {userChat?.name}
         </button>
       </Popover>
       {showProfileCard && (
