@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const instance = axios.create({
-  baseURL: "http://218.233.90.252:3000", // Replace with your API base URL
+  baseURL: process.env.DEV_URL || "https://fakecord.kr/api", // Replace with your API base URL
   timeout: 10000, // Request timeout in milliseconds
 });
 
