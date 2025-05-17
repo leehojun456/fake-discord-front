@@ -11,7 +11,7 @@ export const WebsocketProvider = ({ children }) => {
   useEffect(() => {
     const token = localStorage.getItem("accessToken"); // localStorage에서 token을 가져옴
     if (user) {
-      const newSocket = io("https://fakecord.kr/api", {
+      const newSocket = io("wss://fakecord.kr/ws", {
         auth: { token }, // token을 WebSocket 연결 시 사용
       });
 
