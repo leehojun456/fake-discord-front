@@ -13,12 +13,12 @@ import CircleProfileWithStatus from "../user/CircleProfileWithStatus";
 
 const PersonalChannels = () => {
   const [personalChannels, setPersonalChannels] = useState([]);
-  const { user, settingsModal, setSettingsModal } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
 
   useEffect(() => {
     const fetchData = async () => {
       const response = await axios.get("/personalchannels");
-      const filtered = response.data.map((group) => ({
+      const filtered = response.map((group) => ({
         ...group,
         members: group.members.filter((member) => member.id !== user.id),
       }));

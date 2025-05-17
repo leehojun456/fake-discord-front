@@ -21,11 +21,10 @@ const FriendsList = () => {
   }, []);
 
   const handleClick = async (friendId) => {
-    const result = await axios.post("/personalchannels", {
+    const response = await axios.post("/personalchannels", {
       userId: [friendId],
     });
-    console.log(result.data);
-    navigator(`${result.data.channelId}`);
+    navigator(`${response.channelId}`);
   };
 
   // const ConnectWS = (data) => {

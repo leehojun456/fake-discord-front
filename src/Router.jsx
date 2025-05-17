@@ -24,29 +24,24 @@ export const router = createBrowserRouter([
     element: <DefaultLayout />, // 레이아웃 적용되는 라우트들
     children: [
       {
-        element: <PrivateRoute />,
-        children: [
-          {
-            path: "channels/@me",
-            element: <FriendsPage />,
-          },
-          {
-            path: "channels/@me/:channelId",
-            element: <FriendsChatPage />,
-          },
-          {
-            path: "library",
-            element: <LibraryPage />,
-          },
-          {
-            path: "nitro",
-            element: <NitroPage />,
-          },
-          {
-            path: "shop",
-            element: <ShopPage />,
-          },
-        ],
+        path: "channels/@me",
+        element: <FriendsPage />,
+      },
+      {
+        path: "channels/@me/:channelId",
+        element: <FriendsChatPage />,
+      },
+      {
+        path: "library",
+        element: <LibraryPage />,
+      },
+      {
+        path: "nitro",
+        element: <NitroPage />,
+      },
+      {
+        path: "shop",
+        element: <ShopPage />,
       },
     ],
   },

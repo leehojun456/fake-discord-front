@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import loginBG from "../assets/loginbackground.svg";
 import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../contexts/AuthContext";
+import axios from "../axios";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -21,10 +22,11 @@ const LoginPage = () => {
         password: password,
       });
       console.log(response);
-      const token = response.data.accessToken;
+      const token = response.accessToken;
       localStorage.setItem("accessToken", token);
       setUser(response);
     } catch (error) {
+      console.error("로그인 실패", error);
       alert("로그인에 실패했습니다. 다시 시도해주세요.");
       return;
     }
