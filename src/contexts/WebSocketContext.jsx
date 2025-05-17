@@ -13,7 +13,6 @@ export const WebsocketProvider = ({ children }) => {
 
     if (user) {
       const newSocket = io("https://fakecord.kr", {
-        path: "/ws", // 필요 시 사용
         auth: { token },
         transports: ["websocket"], // 강제로 WebSocket 사용
       });
