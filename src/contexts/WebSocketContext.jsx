@@ -9,19 +9,28 @@ export const WebsocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    const token = localStorage.getItem("accessToken"); // localStorage에서 token을 가져옴
+    const token = localStorage.getItem("accessToken");
+
     if (user) {
-      const newSocket = io("wss://fakecord.kr/ws", {
-        auth: { token }, // token을 WebSocket 연결 시 사용
+      const newSocket = io("https://fakecord.kr", {
+        path: "/ws", // 필요 시 사용
+        auth: { token },
+        transports: ["websocket"], // 강제로 WebSocket 사용
+      });
+
+      newSocket.on("connect", () => {
+        console.log("✅ WebSocket connected:", newSocket.id);
+      });
+
+      newSocket.on("connect_error", (err) => {
+        console.error("❌ Connection error:", err.message);
       });
 
       setSocket(newSocket);
-      console.log("WebSocket connected");
 
-      // 컴포넌트가 unmount 될 때 소켓 연결 종료
       return () => newSocket.disconnect();
     }
-  }, [user]); // token이 변경되면 WebSocket 연결을 재설정
+  }, [user]);
 
   return (
     <WebSocketContext.Provider value={socket}>
