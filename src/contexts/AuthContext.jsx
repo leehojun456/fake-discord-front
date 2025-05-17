@@ -15,10 +15,11 @@ export const AuthProvider = ({ children }) => {
       email: email,
       password: password,
     });
-    const token = response.data.accessToken;
-    localStorage.setItem("accessToken", token);
-    setToken(token);
-    await fetchUser();
+    console.log(response);
+    // const token = response.data.accessToken;
+    // localStorage.setItem("accessToken", token);
+    // setToken(token);
+    // await fetchUser();
   };
 
   const fetchUser = async () => {
