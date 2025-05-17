@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const instance = axios.create({
-  baseURL: process.env.DEV_URL || "https://fakecord.kr/api", // Replace with your API base URL
+  baseURL: "https://fakecord.kr/api", // Replace with your API base URL
   timeout: 10000, // Request timeout in milliseconds
 });
 
@@ -21,25 +21,24 @@ instance.interceptors.request.use(
 
 // Add a response interceptor to handle errors globally
 instance.interceptors.response.use(
-  (response) => {
-    return response; // Return the response data directly
-  },
+  (response) => response,
   (error) => {
-    // Handle errors globally
     if (error.response) {
       if (error.response.status === 401) {
-        // Handle unauthorized access (e.g., redirect to login page)
-        console.error("Unauthorized access - redirecting to login.");
-        // Optionally, you can redirect to the login page here
-        localStorage.removeItem("accessToken"); // Clear the token
-        window.location.href = "/login";
+        // 현재 경로가 로그인 페이지인지 확인
+        if (window.location.pathname !== "/login") {
+          console.error("Unauthorized access - redirecting to login.");
+          localStorage.removeItem("accessToken");
+          window.location.href = "/login";
+        } else {
+          console.log("로그인 페이지에서 401 발생 - 리다이렉트 안함");
+        }
       }
       console.error("API Error:", error.response.data);
     } else {
       console.error("Network Error:", error.message);
     }
-    return Promise.reject(error); // Reject the promise with the error
+    return Promise.reject(error);
   }
 );
-
 export default instance;
