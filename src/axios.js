@@ -21,7 +21,7 @@ instance.interceptors.request.use(
 
 // Add a response interceptor to handle errors globally
 instance.interceptors.response.use(
-  (response) => response,
+  (response) => response.data,
   (error) => {
     if (error.response) {
       if (error.response.status === 401) {

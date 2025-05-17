@@ -9,7 +9,7 @@ const BigProfileCard = ({ userId }) => {
     const fetchData = async () => {
       try {
         const response = await axios.get(`/user/${userId}`);
-        setUser(response.data);
+        setUser(response);
       } catch (error) {
         console.error("Error fetching user data:", error);
       }

@@ -41,21 +41,20 @@ const FriendsChatPage = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const data = await axios.get(
+      const response = await axios.get(
         `/personalchannels/${Number(channelId)}/messages`
       );
-      console.log(data);
-      setChat(data.data);
+      setChat(response);
     };
     fetchData();
   }, [channelId]);
 
   useEffect(() => {
     const fetchData = async () => {
-      const data = await axios.get(
+      const response = await axios.get(
         `/personalchannels/${Number(channelId)}/users`
       );
-      setChatUsers(data.data);
+      setChatUsers(response);
     };
     fetchData();
   }, [channelId]);

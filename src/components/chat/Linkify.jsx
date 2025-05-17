@@ -32,7 +32,7 @@ function Linkify({ text }) {
             const res = await axios.get(
               `/og-preview?url=${encodeURIComponent(href)}`
             );
-            const og = res.data;
+            const og = res;
             if (og?.title || og?.image) {
               setLinkData((prev) => ({ ...prev, [href]: { type: "og", og } }));
             } else {

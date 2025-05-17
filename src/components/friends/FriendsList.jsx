@@ -13,9 +13,9 @@ const FriendsList = () => {
   const navigator = useNavigate();
   useEffect(() => {
     const fetchData = async () => {
-      const data = await axios.get("/friends");
-      setFriends(data.data);
-      ConnectWS(data.data);
+      const response = await axios.get("/friends");
+      setFriends(response);
+      //ConnectWS(data.data);
     };
     fetchData();
   }, []);
@@ -28,13 +28,13 @@ const FriendsList = () => {
     navigator(`${result.data.channelId}`);
   };
 
-  const ConnectWS = (data) => {
-    data.forEach((friend) => {
-      socket.emit("connectFriend", {
-        friendId: friend.id,
-      });
-    });
-  };
+  // const ConnectWS = (data) => {
+  //   data.forEach((friend) => {
+  //     socket.emit("connectFriend", {
+  //       friendId: friend.id,
+  //     });
+  //   });
+  // };
 
   return (
     <>

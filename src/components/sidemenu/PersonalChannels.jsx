@@ -17,13 +17,12 @@ const PersonalChannels = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const data = await axios.get("/personalchannels");
-      const filtered = data.data.map((group) => ({
+      const response = await axios.get("/personalchannels");
+      const filtered = response.data.map((group) => ({
         ...group,
         members: group.members.filter((member) => member.id !== user.id),
       }));
       setPersonalChannels(filtered);
-      console.log(filtered);
     };
     if (user) fetchData();
   }, [user]);

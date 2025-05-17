@@ -16,17 +16,17 @@ export const AuthProvider = ({ children }) => {
       password: password,
     });
     console.log(response);
-    // const token = response.data.accessToken;
-    // localStorage.setItem("accessToken", token);
-    // setToken(token);
-    // await fetchUser();
+    const token = response.data.accessToken;
+    localStorage.setItem("accessToken", token);
+    setToken(token);
+    await fetchUser();
   };
 
   const fetchUser = async () => {
     if (!token) return;
     try {
       const response = await axios.get("/user");
-      setUser(response.data);
+      setUser(response);
     } catch (error) {
       console.error("Error fetching user data:", error);
       localStorage.removeItem("accessToken");
