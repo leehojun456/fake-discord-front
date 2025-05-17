@@ -20,10 +20,10 @@ const Messages = ({ message, userChat, index }) => {
       onMouseEnter={() => setReactionDialog(true)}
       onMouseLeave={() => setReactionDialog(false)}
     >
-      <ChatProfileImage userChat={userChat.user} index={index} />
+      <ChatProfileImage userChat={userChat} index={index} />
       <div className="flex flex-col w-full relative">
         <div className={`flex gap-2 items-center ${index !== 0 && "hidden"}`}>
-          <ChatName userChat={userChat.user} />
+          <ChatName userChat={userChat} />
           <div className={`text-xs text-zinc-400 ${index !== 0 && "hidden"}`}>
             {formatDate(userChat.date)}
           </div>

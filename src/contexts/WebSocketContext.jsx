@@ -14,7 +14,6 @@ export const WebsocketProvider = ({ children }) => {
     if (user) {
       const newSocket = io("https://fakecord.kr", {
         auth: { token },
-        transports: ["websocket"], // 강제로 WebSocket 사용
       });
 
       newSocket.on("connect", () => {
