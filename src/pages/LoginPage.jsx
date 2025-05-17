@@ -7,7 +7,7 @@ const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const { login } = useContext(AuthContext);
+  const { user, setUser } = useContext(AuthContext);
 
   const navigate = useNavigate();
 
@@ -15,13 +15,19 @@ const LoginPage = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     console.log("로그인 버튼 클릭");
-    await login(email, password);
-
-    if (localStorage.getItem("accessToken") === null) {
+    try {
+      const response = await axios.post("/auth/login", {
+        email: email,
+        password: password,
+      });
+      console.log(response);
+      const token = response.data.accessToken;
+      localStorage.setItem("accessToken", token);
+      setUser(response);
+    } catch (error) {
       alert("로그인에 실패했습니다. 다시 시도해주세요.");
       return;
     }
-
     navigate("/channels/@me", { replace: true });
   };
 
