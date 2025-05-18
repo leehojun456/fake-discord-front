@@ -80,7 +80,7 @@ const Messages = ({ message, userChat, index, chatBox, block, setMessage }) => {
     try {
       axios.delete(`/personalchannels/${channelId}/messages/${message.id}`);
       console.log("메세지 삭제 성공");
-      setMessage("");
+      parentRef.current.remove();
       setDeleteModal(false);
     } catch (error) {
       console.error("메세지 삭제 실패", error);
