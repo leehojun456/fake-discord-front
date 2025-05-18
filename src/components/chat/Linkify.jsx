@@ -11,7 +11,7 @@ function isValidImage(url) {
   });
 }
 
-function Linkify({ text }) {
+function Linkify({ text, id }) {
   const urlPattern = /(\bhttps?:\/\/[^\s]+|\bwww\.[^\s]+)/gi;
   const [linkData, setLinkData] = useState({}); // { url: { type: 'image' | 'og' | 'link', og?: {title,desc,image} } }
   const [ImageViewer, setImageViewer] = useState(false);
@@ -143,7 +143,9 @@ function Linkify({ text }) {
         } else {
           return (
             <div key={idx} className="w-full">
-              <div className="break-all">{part}</div>
+              <pre className="break-all" data-key={id}>
+                {part}
+              </pre>
             </div>
           );
         }

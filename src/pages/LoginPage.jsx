@@ -8,7 +8,7 @@ const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const { setUser } = useContext(AuthContext);
+  const { login } = useContext(AuthContext);
 
   const navigate = useNavigate();
 
@@ -16,21 +16,7 @@ const LoginPage = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     console.log("로그인 버튼 클릭");
-    try {
-      const response = await axios.post("/auth/login", {
-        email: email,
-        password: password,
-      });
-      console.log(response);
-      const token = response.accessToken;
-      localStorage.setItem("accessToken", token);
-      setUser(response);
-    } catch (error) {
-      console.error("로그인 실패", error);
-      alert("로그인에 실패했습니다. 다시 시도해주세요.");
-      return;
-    }
-    navigate("/channels/@me", { replace: true });
+    await login(email, password);
   };
 
   // 로그인 페이지에 접근했을 때, accessToken이 있으면 채널 페이지로 이동

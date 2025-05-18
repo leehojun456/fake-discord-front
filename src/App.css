@@ -51,3 +51,8 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
+
+pre {
+  font-family: "Pretendard Variable"; /* 원하는 폰트로 설정 */
+  white-space: pre-wrap; /* 필요 시 줄바꿈 허용 */
+}

@@ -4,18 +4,21 @@ import {
   faComment,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { use, useContext, useEffect, useMemo, useState } from "react";
+import {
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { useParams } from "react-router-dom";
 import { HeaderMessageContext } from "../contexts/HeaderMessageContext";
 import { WebSocketContext } from "../contexts/WebSocketContext";
 import axios from "../axios";
 import { AuthContext } from "../contexts/AuthContext";
-import { formatDate, formatYYMMDate } from "../utils/dateFormat";
+import { formatYYMMDate } from "../utils/dateFormat";
 import DataDivider from "../components/chat/dateDivider";
-import ChatProfileImage from "../components/chat/chatProfileImage";
-import ChatName from "../components/chat/chatName";
 import BigProfileCard from "../components/user/BigProfileCard";
-import Linkify from "../components/chat/Linkify";
 import Messages from "../components/chat/messages";
 
 const FriendsChatPage = () => {
@@ -27,6 +30,10 @@ const FriendsChatPage = () => {
   const { user } = useContext(AuthContext);
   const [chatUsers, setChatUsers] = useState([]);
   const { channelId } = useParams();
+  const textareaRef = useRef(null);
+  const scrollRef = useRef(null);
+  const [isScroll, setIsScroll] = useState(false);
+  const chatBox = useRef(null);
 
   useEffect(() => {
     // 헤더 메시지와 아이콘을 설정합니다.
@@ -61,53 +68,51 @@ const FriendsChatPage = () => {
   }, [channelId]);
 
   const handleMessageSubmit = async (e) => {
-    e.preventDefault();
-    console.log("메시지 전송", message);
-    if (message.trim() === "") return;
+    if (e.key === "Enter" && !e.shiftKey) {
+      console.log(message);
+      if (message.trim() === "") return;
 
-    console.log("메시지 전송", user);
+      const data = {
+        userId: user.id,
+        content: message,
+        channelId: Number(channelId),
+        date: new Date().toISOString(), // ISO 문자열 날짜
+      };
+      // socket이 null이 아닌지 확인
+      if (!socket) {
+        console.error("Socket not connected");
+        return; // socket이 null이면 함수를 종료합니다.
+      }
 
-    const data = {
-      userId: user.id,
-      content: message,
-      channelId: Number(channelId),
-      date: new Date().toISOString(), // ISO 문자열 날짜
-    };
-    // socket이 null이 아닌지 확인
-    if (!socket) {
-      console.error("Socket not connected");
-      return; // socket이 null이면 함수를 종료합니다.
-    }
+      try {
+        socket.emit("personalChannel", data);
+        e.target.reset();
+        setMessage("");
+        // setChat((prevChat) => {
+        //   const newChat = [...prevChat];
+        //   const today = new Date().toISOString(); // 날짜 비교를 위한 문자열
 
-    try {
-      socket.emit("personalChannel", data);
-      e.target.reset();
-      setMessage("");
+        //   const lastChat = newChat[newChat.length - 1];
 
-      // setChat((prevChat) => {
-      //   const newChat = [...prevChat];
-      //   const today = new Date().toISOString(); // 날짜 비교를 위한 문자열
+        //   if (
+        //     lastChat &&
+        //     lastChat.userId === user.id &&
+        //     lastChat.date.slice(0, 16) === today.slice(0, 16)
+        //   ) {
+        //     lastChat.messages.push({ content: message });
+        //   } else {
+        //     newChat.push({
+        //       userId: user.id,
+        //       messages: [{ content: message }],
+        //       date: new Date().toISOString(),
+        //     });
+        //   }
 
-      //   const lastChat = newChat[newChat.length - 1];
-
-      //   if (
-      //     lastChat &&
-      //     lastChat.userId === user.id &&
-      //     lastChat.date.slice(0, 16) === today.slice(0, 16)
-      //   ) {
-      //     lastChat.messages.push({ content: message });
-      //   } else {
-      //     newChat.push({
-      //       userId: user.id,
-      //       messages: [{ content: message }],
-      //       date: new Date().toISOString(),
-      //     });
-      //   }
-
-      //   return newChat;
-      // });
-    } catch (error) {
-      console.error("Error sending message:", error);
+        //   return newChat;
+        // });
+      } catch (error) {
+        console.error("Error sending message:", error);
+      }
     }
   };
 
@@ -148,6 +153,32 @@ const FriendsChatPage = () => {
     };
   }, [socket]);
 
+  useEffect(() => {
+    const div = scrollRef.current;
+    if (!div) return;
+
+    let timeoutId;
+
+    const handleScroll = () => {
+      setIsScroll(true); // 스크롤 발생 시 true
+
+      clearTimeout(timeoutId);
+      // 스크롤 멈춘 후 200ms 뒤에 false로 바꿈
+      timeoutId = setTimeout(() => {
+        setIsScroll(false);
+      }, 200);
+    };
+
+    div.addEventListener("scroll", handleScroll);
+
+    // 초기 상태 false
+    setIsScroll(false);
+
+    return () => {
+      clearTimeout(timeoutId);
+      div.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
   return (
     <>
       <div className="flex h-full max-h-[50px] border-b-1 border-zinc-700 text-white items-center justify-between px-8 py-2 gap-6">
@@ -187,11 +218,20 @@ const FriendsChatPage = () => {
       {/* 채팅창 영역 */}
       <div className="flex flex-1 overflow-hidden select-text">
         <div className="w-full flex flex-col">
-          <div className="w-full flex flex-col justify-end  overflow-hidden">
-            <div className="overflow-y-auto m-1">
+          <div
+            className="w-full flex flex-col justify-end flex-1 overflow-hidden"
+            ref={chatBox}
+          >
+            <div className={`overflow-y-auto m-1`} ref={scrollRef}>
               {chat.map((userChat, index) => {
                 return (
-                  <div key={index} className={`flex flex-col py-2 text-white `}>
+                  <div
+                    key={index}
+                    className={`flex flex-col py-2 text-white  ${
+                      isScroll && "pointer-events-none"
+                    }
+                     `}
+                  >
                     {/* 날짜가 달라지면 구분선 추가 */}
                     <DataDivider
                       previousDate={formatYYMMDate(chat[index - 1]?.date)}
@@ -205,6 +245,7 @@ const FriendsChatPage = () => {
                           userChat={userChat}
                           key={index}
                           index={index}
+                          chatBox={chatBox}
                         />
                       );
                     })}
@@ -213,16 +254,29 @@ const FriendsChatPage = () => {
               })}
             </div>
           </div>
-          <form onSubmit={handleMessageSubmit} className="w-full p-4">
-            <input
-              className="w-full h-[52px]  rounded-lg bg-zinc-700 px-4 text-white border-1 border-zinc-600 outline-none"
+          <div className="w-full p-4">
+            <textarea
+              ref={textareaRef}
+              rows={1}
+              className="w-full min-h-[52px]  rounded-lg bg-zinc-700 px-4 text-white border-1 border-zinc-600 outline-none resize-none overflow-y-hidden py-[14px]"
               placeholder={`@${chatUsers[0]?.user.name}에 메시지 보내기`}
               value={message}
               onChange={(e) => {
                 setMessage(e.target.value);
               }}
+              onInput={(e) => {
+                const textarea = e.target;
+                textarea.style.height = "auto"; // 높이를 초기화
+                textarea.style.height = `${textarea.scrollHeight}px`; // 새로운 높이 설정
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleMessageSubmit(e);
+                }
+              }}
             />
-          </form>
+          </div>
         </div>
         {showProfile && <BigProfileCard userId={chatUsers[0]?.user.id} />}
       </div>

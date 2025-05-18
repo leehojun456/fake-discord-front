@@ -18,11 +18,13 @@ import PersonalChannels from "../components/sidemenu/PersonalChannels";
 import { AuthContext } from "../contexts/AuthContext";
 import SettingsPage from "../pages/SettingsPage";
 import CircleProfileWithStatus from "../components/user/CircleProfileWithStatus";
+import InitLoadingScreen from "../../screen/InitLoadingScreen";
 
 const DefaultLayout = () => {
   const [headerMessage, setHeaderMessage] = useState("");
   const [headerIcon, setHeaderIcon] = useState(faCloud);
-  const { settingsModal, setSettingsModal, user } = useContext(AuthContext);
+  const { settingsModal, setSettingsModal, user, isUserLoading } =
+    useContext(AuthContext);
   const [sidebarWidth, setSidebarWidth] = useState(
     JSON.parse(localStorage.getItem("userSettings") || "{}")?.sidebarWidth ??
       340
@@ -65,6 +67,7 @@ const DefaultLayout = () => {
 
   return (
     <>
+      {isUserLoading && <InitLoadingScreen />}
       <HeaderMessageContext.Provider
         value={{ setHeaderMessage, setHeaderIcon }}
       >

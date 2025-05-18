@@ -1,11 +1,13 @@
 import { Popover } from "react-tiny-popover";
 import ProfileCard from "../user/ProfileCard";
-import { useState } from "react";
 import { createPortal } from "react-dom";
-import { formatDate } from "../../utils/dateFormat";
 
-const ChatProfileImage = ({ userChat, index }) => {
-  const [showProfileCard, setShowProfileCard] = useState(false);
+const ChatProfileImage = ({
+  userChat,
+  index,
+  showProfileCard,
+  setShowProfileCard,
+}) => {
   const portalElement = document.getElementById("root");
   return (
     <>
@@ -21,6 +23,7 @@ const ChatProfileImage = ({ userChat, index }) => {
         padding={10}
         boundaryInset={10}
         align="start"
+        reposition="true"
       >
         <button
           type="button"
@@ -45,7 +48,7 @@ const ChatProfileImage = ({ userChat, index }) => {
                   setShowProfileCard(false);
                 }
               }}
-            ></div>,
+            />,
             portalElement
           )}
         </>

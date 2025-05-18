@@ -4,14 +4,17 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { formatDate } from "../../utils/dateFormat";
 
-const ChatName = ({ userChat }) => {
-  const [showProfileCard, setShowProfileCard] = useState(false);
+const ChatName = ({
+  userChat,
+  showProfileCardName,
+  setShowProfileCardName,
+}) => {
   const portalElement = document.getElementById("root");
 
   return (
     <>
       <Popover
-        isOpen={showProfileCard}
+        isOpen={showProfileCardName}
         content={<ProfileCard userId={userChat.userId} />}
         positions={"right"}
         padding={10}
@@ -23,20 +26,20 @@ const ChatName = ({ userChat }) => {
           className="cursor-pointer hover:underline"
           onClick={() => {
             console.log("프로필 클릭");
-            setShowProfileCard(true);
+            setShowProfileCardName(true);
           }}
         >
           {userChat?.name}
         </button>
       </Popover>
-      {showProfileCard && (
+      {showProfileCardName && (
         <>
           {createPortal(
             <div
               className="w-dvw h-dvh absolute top-0 left-0"
               onMouseDown={(e) => {
                 if (e.target === e.currentTarget) {
-                  setShowProfileCard(false);
+                  setShowProfileCardName(false);
                 }
               }}
             ></div>,
