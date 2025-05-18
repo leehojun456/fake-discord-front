@@ -1,9 +1,12 @@
-const EmojiMiniPopup = () => {
+const EmojiMiniPopup = ({ setShowEmojiAdd }) => {
   return (
     <>
       <div
         className="w-[200px] flex flex-col bg-zinc-700 p-2 rounded-md border border-zinc-600 shadow-2xl text-white items-start relative z-50"
         onClick={(e) => e.stopPropagation()}
+        onMouseLeave={() => {
+          setShowEmojiAdd(false);
+        }}
       >
         <button
           type="button"

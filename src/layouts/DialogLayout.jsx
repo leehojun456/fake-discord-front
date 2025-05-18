@@ -15,7 +15,7 @@ const DialogLayout = ({ children, setClose }) => {
     <>
       {createPortal(
         <div
-          className="w-full h-full bg-black/50 absolute top-0 left-0 flex justify-center items-center animate__animated animate__fadeIn animate__faster"
+          className="w-full h-full bg-black/50 absolute top-0 left-0 flex justify-center items-center select-none"
           onMouseDown={handleBackdropClick}
         >
           <div className="bg-zinc-700 rounded-md p-6 text-white gap-6 flex flex-col border-1 border-zinc-600">

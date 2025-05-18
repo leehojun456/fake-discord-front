@@ -246,6 +246,7 @@ const FriendsChatPage = () => {
                           key={index}
                           index={index}
                           chatBox={chatBox}
+                          block={false}
                         />
                       );
                     })}
