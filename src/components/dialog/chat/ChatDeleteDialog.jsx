@@ -1,4 +1,4 @@
-const ChatDeleteDialog = ({ children, setClose }) => {
+const ChatDeleteDialog = ({ children, setClose, onDelete }) => {
   return (
     <>
       <div className="min-w-[440px] gap-4 flex flex-col">
@@ -29,6 +29,9 @@ const ChatDeleteDialog = ({ children, setClose }) => {
           <button
             type="button"
             className="w-[96px] h-[38px] bg-red-500 rounded-md cursor-pointer"
+            onClick={() => {
+              onDelete();
+            }}
           >
             삭제
           </button>

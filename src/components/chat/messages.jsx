@@ -18,7 +18,7 @@ import { set } from "lodash";
 import ChatDeleteDialog from "../dialog/chat/ChatDeleteDialog";
 import DialogLayout from "../../layouts/DialogLayout";
 
-const Messages = ({ message, userChat, index, chatBox, block }) => {
+const Messages = ({ message, userChat, index, chatBox, block, setMessage }) => {
   const [reactionDialog, setReactionDialog] = useState(false);
   const [contextMenu, setContextMenu] = useState(false);
   const [showProfileCard, setShowProfileCard] = useState(false);
@@ -57,7 +57,7 @@ const Messages = ({ message, userChat, index, chatBox, block }) => {
   }, [contextMenu, showProfileCard, showProfileCardName, isEdit]);
 
   // 메세지 수정
-  const handleMessageSubmit = async () => {
+  const handleMessageSubmit = async (e) => {
     if (editMessage.trim() === "") {
       setDeleteModal(true);
       return;
@@ -77,9 +77,29 @@ const Messages = ({ message, userChat, index, chatBox, block }) => {
 
   // 메세지 삭제
   const handleMessageDelete = () => {
+    try {
+      axios.delete(`/personalchannels/${channelId}/messages/${message.id}`);
+      console.log("메세지 삭제 성공");
+      setMessage("");
+      setDeleteModal(false);
+    } catch (error) {
+      console.error("메세지 삭제 실패", error);
+    }
     // Handle message deletion logic here
     setIsEdit(false);
   };
+
+  // 메세지 줄 수 계산
+  const getLineCount = (text) => {
+    return text.split("\n").length;
+  };
+
+  useLayoutEffect(() => {
+    if (textareaRef.current === null) return;
+    const textarea = textareaRef.current;
+    textarea.style.height = "auto"; // 높이를 초기화
+    textarea.style.height = `${textarea.scrollHeight}px`; // 새로운 높이 설정
+  }, [editMessage]);
 
   return (
     <>
@@ -133,23 +153,19 @@ const Messages = ({ message, userChat, index, chatBox, block }) => {
           </div>
           {!isEdit && <Linkify text={editMessage} id={message.id} />}
           {isEdit && (
-            <div className="w-full p-2 flex justify-center flex-col gap-2">
+            <div className="w-full p-2 flex justify-center flex-col gap-2 h-full">
               <textarea
                 ref={textareaRef}
-                className="w-full h-[52px]  rounded-lg bg-zinc-700 px-4 text-white border-1 border-zinc-600 outline-none resize-none overflow-y-hidden py-[14px]"
+                className="w-full min-h-[52px] h-full rounded-lg bg-zinc-700 px-4 text-white border-1 border-zinc-600 outline-none resize-none py-[14px]"
                 value={editMessage}
+                rows={getLineCount(editMessage)}
                 onChange={(e) => {
                   setEditMessage(e.target.value);
-                }}
-                onInput={(e) => {
-                  const textarea = e.target;
-                  textarea.style.height = "52px"; // 높이를 초기화
-                  textarea.style.height = `${textarea.scrollHeight}px`; // 새로운 높이 설정
                 }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
-                    // handleMessageSubmit(e);
+                    handleMessageSubmit(e);
                   }
                 }}
               />
@@ -171,12 +187,10 @@ const Messages = ({ message, userChat, index, chatBox, block }) => {
                   className="text-blue-300 cursor-pointer hover:underline"
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
                       handleMessageSubmit();
                     }
                   }}
                   onClick={() => {
-                    setIsEdit(false);
                     handleMessageSubmit();
                   }}
                 >
@@ -262,6 +276,7 @@ const Messages = ({ message, userChat, index, chatBox, block }) => {
                     block={true}
                   />
                 }
+                onDelete={handleMessageDelete}
               />
             }
             setClose={setDeleteModal}

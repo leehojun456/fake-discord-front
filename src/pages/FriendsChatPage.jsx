@@ -68,51 +68,27 @@ const FriendsChatPage = () => {
   }, [channelId]);
 
   const handleMessageSubmit = async (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      console.log(message);
-      if (message.trim() === "") return;
+    console.log(message);
+    if (message.trim() === "") return;
 
-      const data = {
-        userId: user.id,
-        content: message,
-        channelId: Number(channelId),
-        date: new Date().toISOString(), // ISO 문자열 날짜
-      };
-      // socket이 null이 아닌지 확인
-      if (!socket) {
-        console.error("Socket not connected");
-        return; // socket이 null이면 함수를 종료합니다.
-      }
+    const data = {
+      userId: user.id,
+      content: message,
+      channelId: Number(channelId),
+      date: new Date().toISOString(), // ISO 문자열 날짜
+    };
+    // socket이 null이 아닌지 확인
+    if (!socket) {
+      console.error("Socket not connected");
+      return; // socket이 null이면 함수를 종료합니다.
+    }
 
-      try {
-        socket.emit("personalChannel", data);
-        e.target.reset();
-        setMessage("");
-        // setChat((prevChat) => {
-        //   const newChat = [...prevChat];
-        //   const today = new Date().toISOString(); // 날짜 비교를 위한 문자열
+    try {
+      socket.emit("personalChannel", data);
 
-        //   const lastChat = newChat[newChat.length - 1];
-
-        //   if (
-        //     lastChat &&
-        //     lastChat.userId === user.id &&
-        //     lastChat.date.slice(0, 16) === today.slice(0, 16)
-        //   ) {
-        //     lastChat.messages.push({ content: message });
-        //   } else {
-        //     newChat.push({
-        //       userId: user.id,
-        //       messages: [{ content: message }],
-        //       date: new Date().toISOString(),
-        //     });
-        //   }
-
-        //   return newChat;
-        // });
-      } catch (error) {
-        console.error("Error sending message:", error);
-      }
+      setMessage("");
+    } catch (error) {
+      console.error("Error sending message:", error);
     }
   };
 
@@ -139,11 +115,21 @@ const FriendsChatPage = () => {
             userId,
             messages: [{ content }],
             date: date,
+            avatar: user.avatar,
+            name: user.name,
           });
         }
 
         return newChat;
       });
+
+      setTimeout(() => {
+        // 스크롤을 맨 아래로 이동
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+          console.log("스크롤 이동");
+        }
+      }, 10);
     };
 
     socket.on("personalChannelResponse", handleReceiveMessage);
@@ -179,6 +165,13 @@ const FriendsChatPage = () => {
       div.removeEventListener("scroll", handleScroll);
     };
   }, []);
+
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    textarea.style.height = "auto"; // 높이를 초기화
+    textarea.style.height = `${textarea.scrollHeight}px`; // 새로운 높이 설정
+  }, [message]);
+
   return (
     <>
       <div className="flex h-full max-h-[50px] border-b-1 border-zinc-700 text-white items-center justify-between px-8 py-2 gap-6">
@@ -247,6 +240,7 @@ const FriendsChatPage = () => {
                           index={index}
                           chatBox={chatBox}
                           block={false}
+                          setMessage={setMessage}
                         />
                       );
                     })}
@@ -264,11 +258,6 @@ const FriendsChatPage = () => {
               value={message}
               onChange={(e) => {
                 setMessage(e.target.value);
-              }}
-              onInput={(e) => {
-                const textarea = e.target;
-                textarea.style.height = "auto"; // 높이를 초기화
-                textarea.style.height = `${textarea.scrollHeight}px`; // 새로운 높이 설정
               }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
