@@ -21,6 +21,8 @@ const ChatContextMenu = ({
   setIsEdit,
   chatBox,
   setDeleteModal,
+  onDelete,
+  setReplyId,
 }) => {
   const [showEmojiAdd, setShowEmojiAdd] = useState(false);
   const { user } = useContext(AuthContext);
@@ -44,7 +46,10 @@ const ChatContextMenu = ({
     },
     {
       name: "답장",
-      fun: null,
+      fun: () => {
+        console.log(message.id);
+        setReplyId(message.id);
+      },
       icon: <FontAwesomeIcon icon={faComment} />,
     },
     {
@@ -172,7 +177,11 @@ const ChatContextMenu = ({
             <button
               type="button"
               className="cursor-pointer w-full flex justify-between text-left bg-zinc-700 hover:bg-red-800/10 rounded-md p-2 hover:text-red-200 text-red-300 "
-              onClick={() => {
+              onClick={(e) => {
+                if (e.shiftKey) {
+                  onDelete();
+                  return;
+                }
                 handleDelete();
                 setContextMenu(false);
               }}

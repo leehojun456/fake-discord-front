@@ -18,7 +18,17 @@ import { set } from "lodash";
 import ChatDeleteDialog from "../dialog/chat/ChatDeleteDialog";
 import DialogLayout from "../../layouts/DialogLayout";
 
-const Messages = ({ message, userChat, index, chatBox, block, setMessage }) => {
+const Messages = ({
+  message,
+  userChat,
+  setUserChat,
+  index,
+  chatBox,
+  block,
+  setChat,
+  setReplyId,
+  replyId,
+}) => {
   const [reactionDialog, setReactionDialog] = useState(false);
   const [contextMenu, setContextMenu] = useState(false);
   const [showProfileCard, setShowProfileCard] = useState(false);
@@ -79,8 +89,14 @@ const Messages = ({ message, userChat, index, chatBox, block, setMessage }) => {
   const handleMessageDelete = () => {
     try {
       axios.delete(`/personalchannels/${channelId}/messages/${message.id}`);
-      console.log("메세지 삭제 성공");
-      parentRef.current.remove();
+
+      setChat((prevChats) =>
+        prevChats.map((userChat) => ({
+          ...userChat,
+          messages: userChat.messages.filter((msg) => msg.id !== message.id),
+        }))
+      );
+
       setDeleteModal(false);
     } catch (error) {
       console.error("메세지 삭제 실패", error);
@@ -107,7 +123,9 @@ const Messages = ({ message, userChat, index, chatBox, block, setMessage }) => {
         data-id={message.id}
         ref={parentRef}
         className={`flex gap-2 ${
-          (reactionDialog || isEdit) && "bg-zinc-700"
+          replyId === message.id
+            ? "bg-blue-500/20 border-l-2 border-blue-500"
+            : (reactionDialog || isEdit) && "bg-zinc-700"
         } relative ${block && "pointer-events-none"}`}
         onMouseEnter={() => {
           setReactionDialog(true);
@@ -202,10 +220,13 @@ const Messages = ({ message, userChat, index, chatBox, block, setMessage }) => {
           )}
         </div>
         {reactionDialog && !isEdit && (
-          <div className="absolute bg-zinc-700 p-2 rounded-md border-1 border-zinc-600 w-fit right-4 -top-[16px] h-[40px] flex gap-2 shadow-md">
+          <div className="absolute bg-zinc-700 p-2 rounded-md border-1 border-zinc-600 w-fit right-4 -top-[16px] h-[40px] flex gap-2 shadow-md select-none">
             <button
               type="button"
               className="text-zinc-400 text-md cursor-pointer hover:text-white w-[20px]"
+              onClick={() => {
+                setReplyId(message.id);
+              }}
             >
               <FontAwesomeIcon icon={faComments} />
             </button>
@@ -241,7 +262,9 @@ const Messages = ({ message, userChat, index, chatBox, block, setMessage }) => {
                       setContextMenu={setContextMenu}
                       message={message}
                       setIsEdit={setIsEdit}
+                      setReplyId={setReplyId}
                       chatBox={chatBox}
+                      onDelete={handleMessageDelete}
                       setDeleteModal={setDeleteModal}
                     />
                   </>

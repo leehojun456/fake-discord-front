@@ -64,7 +64,7 @@ function Linkify({ text, id }) {
             <a
               key={`${idx}-original`}
               href={href}
-              className="text-blue-300 hover:underline mr-2"
+              className="text-blue-300 hover:underline mr-2 w-fit"
               target="_blank"
               rel="noreferrer"
             >
@@ -142,11 +142,9 @@ function Linkify({ text, id }) {
           return originalLink;
         } else {
           return (
-            <div key={idx} className="w-full">
-              <pre className="break-all" data-key={id}>
-                {part}
-              </pre>
-            </div>
+            <pre className="break-all" data-key={id}>
+              {part}
+            </pre>
           );
         }
       })}

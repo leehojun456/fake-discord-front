@@ -2,6 +2,7 @@ import {
   faBolt,
   faCircleUser,
   faComment,
+  faXmarkCircle,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -37,6 +38,7 @@ const FriendsChatPage = () => {
   const [isScroll, setIsScroll] = useState(false);
   const chatBox = useRef(null);
   const [loading, setLoading] = useState(false);
+  const [replyId, setReplyId] = useState(false);
 
   useEffect(() => {
     // 헤더 메시지와 아이콘을 설정합니다.
@@ -287,11 +289,14 @@ const FriendsChatPage = () => {
                         <Messages
                           message={message}
                           userChat={userChat}
-                          key={index}
+                          key={message.id}
                           index={index}
                           chatBox={chatBox}
                           block={false}
                           setMessage={setMessage}
+                          setChat={setChat}
+                          setReplyId={setReplyId}
+                          replyId={replyId}
                         />
                       );
                     })}
@@ -301,6 +306,41 @@ const FriendsChatPage = () => {
             </div>
           </div>
           <div className="w-full p-4">
+            {replyId && (
+              <button
+                type="button"
+                className="w-full top-0 left-0  bg-zinc-700 h-[40px] rounded-t-md text-white flex items-center justify-between px-4 cursor-pointer select-none p-2"
+              >
+                <div>
+                  <span>
+                    {
+                      chat.find((chat) => {
+                        chat?.messages.some((msg) => {
+                          msg.id === replyId;
+                        });
+                        return chat;
+                      }).name
+                    }
+                  </span>
+                  {" 님에게 답장하는 중"}
+                </div>
+                <div className="flex gap-4 h-full items-center">
+                  <div>@ 켜짐</div>
+                  <div className="h-full border-l-1 border-zinc-600" />
+                  <button
+                    type="button"
+                    className="flex justify-center cursor-pointer text-zinc-400 hover:text-white"
+                    onClick={() => {
+                      setReplyId(false);
+                      setMessage("");
+                    }}
+                  >
+                    <FontAwesomeIcon icon={faXmarkCircle} />
+                  </button>
+                </div>
+              </button>
+            )}
+
             <textarea
               ref={textareaRef}
               rows={1}
