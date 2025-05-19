@@ -104,6 +104,7 @@ const Messages = ({ message, userChat, index, chatBox, block, setMessage }) => {
   return (
     <>
       <div
+        data-id={message.id}
         ref={parentRef}
         className={`flex gap-2 ${
           (reactionDialog || isEdit) && "bg-zinc-700"
@@ -148,7 +149,7 @@ const Messages = ({ message, userChat, index, chatBox, block, setMessage }) => {
                 index !== 0 && block === false && "hidden"
               }`}
             >
-              {formatDate(userChat.date)}
+              {formatDate(userChat.timeGroup)}
             </div>
           </div>
           {!isEdit && <Linkify text={editMessage} id={message.id} />}

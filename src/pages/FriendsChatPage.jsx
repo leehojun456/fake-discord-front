@@ -5,6 +5,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
+  useCallback,
   useContext,
   useEffect,
   useLayoutEffect,
@@ -20,6 +21,7 @@ import { formatYYMMDate } from "../utils/dateFormat";
 import DataDivider from "../components/chat/dateDivider";
 import BigProfileCard from "../components/user/BigProfileCard";
 import Messages from "../components/chat/messages";
+import { format, formatDate } from "date-fns";
 
 const FriendsChatPage = () => {
   const [showProfile, setShowProfile] = useState(false);
@@ -34,6 +36,7 @@ const FriendsChatPage = () => {
   const scrollRef = useRef(null);
   const [isScroll, setIsScroll] = useState(false);
   const chatBox = useRef(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     // 헤더 메시지와 아이콘을 설정합니다.
@@ -45,27 +48,99 @@ const FriendsChatPage = () => {
       JSON.parse(localStorage.getItem("userSettings") || "{}")?.showProfile ??
         false
     );
+    ScrollDetector();
   }, []);
 
   useEffect(() => {
-    const fetchData = async () => {
-      const response = await axios.get(
-        `/personalchannels/${Number(channelId)}/messages`
-      );
-      setChat(response);
-    };
-    fetchData();
+    fetchMessages();
+    fetchUsers();
   }, [channelId]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      const response = await axios.get(
-        `/personalchannels/${Number(channelId)}/users`
-      );
-      setChatUsers(response);
+    if (!socket) return;
+
+    const handleReceiveMessage = (data) => {
+      const { userId, content, date } = data;
+
+      setChat((prevChat) => {
+        const newChat = [...prevChat];
+        const lastChat = newChat[newChat.length - 1];
+        const lastChatDate = new Date(
+          lastChat.timeGroup.replace("T", " ").replace("Z", "")
+        );
+
+        if (
+          lastChat &&
+          lastChat.userId === userId &&
+          format(
+            date.replace("T", " ").replace("Z", ""),
+            "yyyy-MM-dd HH:mm"
+          ) === format(lastChatDate, "yyyy-MM-dd HH:mm")
+        ) {
+          lastChat.messages.push({ content });
+        } else {
+          newChat.push({
+            userId,
+            timeGroup: date,
+            messages: [{ content }],
+            latestMessage: date,
+            avatar: user.avatar,
+            name: user.name,
+          });
+        }
+
+        return newChat;
+      });
+
+      setTimeout(() => {
+        // 스크롤을 맨 아래로 이동
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+          console.log("스크롤 이동");
+        }
+      }, 10);
     };
-    fetchData();
-  }, [channelId]);
+
+    socket.on("personalChannelResponse", handleReceiveMessage);
+
+    return () => {
+      socket.off("personalChannelResponse", handleReceiveMessage);
+    };
+  }, [socket]);
+
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    textarea.style.height = "auto"; // 높이를 초기화
+    textarea.style.height = `${textarea.scrollHeight}px`; // 새로운 높이 설정
+  }, [message]);
+
+  // 스크롤 감지
+  const ScrollDetector = () => {
+    const div = scrollRef.current;
+    if (!div) return;
+
+    let timeoutId;
+
+    const handleScroll = () => {
+      setIsScroll(true); // 스크롤 발생 시 true
+
+      clearTimeout(timeoutId);
+      // 스크롤 멈춘 후 200ms 뒤에 false로 바꿈
+      timeoutId = setTimeout(() => {
+        setIsScroll(false);
+      }, 200);
+    };
+
+    div.addEventListener("scroll", handleScroll);
+
+    // 초기 상태 false
+    setIsScroll(false);
+
+    return () => {
+      clearTimeout(timeoutId);
+      div.removeEventListener("scroll", handleScroll);
+    };
+  };
 
   const handleMessageSubmit = async (e) => {
     console.log(message);
@@ -92,85 +167,58 @@ const FriendsChatPage = () => {
     }
   };
 
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleReceiveMessage = (data) => {
-      const { userId, content, date } = data;
-      console.log("메시지 수신", data);
-
-      setChat((prevChat) => {
-        const newChat = [...prevChat];
-        const today = new Date(date).toISOString().slice(0, 16);
-        const lastChat = newChat[newChat.length - 1];
-
-        if (
-          lastChat &&
-          lastChat.userId === userId &&
-          lastChat.date.slice(0, 16) === today
-        ) {
-          lastChat.messages.push({ content });
-        } else {
-          newChat.push({
-            userId,
-            messages: [{ content }],
-            date: date,
-            avatar: user.avatar,
-            name: user.name,
-          });
+  const fetchMessages = async (cursor, sort) => {
+    try {
+      const response = await axios.get(
+        `/personalchannels/${channelId}/messages`,
+        {
+          params: {
+            cursor,
+            limit: 5,
+            sort: sort || "desc",
+          },
         }
+      );
 
-        return newChat;
+      if (response.length === 0) return; // 더 이상 불러올 데이터 없음
+
+      setChat((prev) => [...prev, ...response]);
+    } catch (error) {
+      console.error("메시지 불러오기 실패:", error);
+    }
+  };
+
+  const fetchUsers = async () => {
+    const response = await axios.get(
+      `/personalchannels/${Number(channelId)}/users`
+    );
+    setChatUsers(response);
+  };
+
+  // IntersectionObserver 인스턴스 저장용 ref
+  const observer = useRef();
+
+  // 마지막 아이템에 ref를 붙이기 위한 콜백 함수
+  // node: 마지막 아이템 DOM 요소
+  const lastItemRef = useCallback(
+    (node) => {
+      if (loading || !node) return;
+
+      if (observer.current) observer.current.disconnect();
+
+      observer.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting) {
+          let cursor = entries[0].target.getAttribute("data-id");
+          if (cursor) {
+            fetchMessages(cursor);
+          }
+        }
       });
 
-      setTimeout(() => {
-        // 스크롤을 맨 아래로 이동
-        if (scrollRef.current) {
-          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-          console.log("스크롤 이동");
-        }
-      }, 10);
-    };
-
-    socket.on("personalChannelResponse", handleReceiveMessage);
-
-    return () => {
-      socket.off("personalChannelResponse", handleReceiveMessage);
-    };
-  }, [socket]);
-
-  useEffect(() => {
-    const div = scrollRef.current;
-    if (!div) return;
-
-    let timeoutId;
-
-    const handleScroll = () => {
-      setIsScroll(true); // 스크롤 발생 시 true
-
-      clearTimeout(timeoutId);
-      // 스크롤 멈춘 후 200ms 뒤에 false로 바꿈
-      timeoutId = setTimeout(() => {
-        setIsScroll(false);
-      }, 200);
-    };
-
-    div.addEventListener("scroll", handleScroll);
-
-    // 초기 상태 false
-    setIsScroll(false);
-
-    return () => {
-      clearTimeout(timeoutId);
-      div.removeEventListener("scroll", handleScroll);
-    };
-  }, []);
-
-  useEffect(() => {
-    const textarea = textareaRef.current;
-    textarea.style.height = "auto"; // 높이를 초기화
-    textarea.style.height = `${textarea.scrollHeight}px`; // 새로운 높이 설정
-  }, [message]);
+      observer.current.observe(node);
+    },
+    [loading] // fetchMessages는 필요 없음 (async 함수는 불변)
+  );
 
   return (
     <>
@@ -217,18 +265,21 @@ const FriendsChatPage = () => {
           >
             <div className={`overflow-y-auto m-1`} ref={scrollRef}>
               {chat.map((userChat, index) => {
+                const isLast = index === chat.length - 1;
                 return (
                   <div
                     key={index}
+                    data-id={userChat.latestMessage}
                     className={`flex flex-col py-2 text-white  ${
                       isScroll && "pointer-events-none"
                     }
                      `}
+                    ref={isLast ? lastItemRef : null} // 마지막 아이템에만 ref
                   >
                     {/* 날짜가 달라지면 구분선 추가 */}
                     <DataDivider
-                      previousDate={formatYYMMDate(chat[index - 1]?.date)}
-                      date={formatYYMMDate(userChat.date)}
+                      previousDate={formatYYMMDate(chat[index - 1]?.timeGroup)}
+                      date={formatYYMMDate(userChat.timeGroup)}
                     />
 
                     {userChat.messages.map((message, index) => {
