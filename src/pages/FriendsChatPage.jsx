@@ -2,6 +2,10 @@ import {
   faBolt,
   faCircleUser,
   faComment,
+  faHandsClapping,
+  faMagnifyingGlass,
+  faMartiniGlass,
+  faSmile,
   faXmarkCircle,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -23,6 +27,8 @@ import DataDivider from "../components/chat/dateDivider";
 import BigProfileCard from "../components/user/BigProfileCard";
 import Messages from "../components/chat/messages";
 import { format, formatDate } from "date-fns";
+import { Popover } from "react-tiny-popover";
+import EmojiBox from "../components/chat/EmojiBox";
 
 const FriendsChatPage = () => {
   const [showProfile, setShowProfile] = useState(false);
@@ -39,6 +45,7 @@ const FriendsChatPage = () => {
   const chatBox = useRef(null);
   const [loading, setLoading] = useState(false);
   const [replyId, setReplyId] = useState(false);
+  const [emojiBox, setEmojiBox] = useState(false);
 
   useEffect(() => {
     // 헤더 메시지와 아이콘을 설정합니다.
@@ -340,23 +347,46 @@ const FriendsChatPage = () => {
                 </div>
               </button>
             )}
-
-            <textarea
-              ref={textareaRef}
-              rows={1}
-              className="w-full min-h-[52px]  rounded-lg bg-zinc-700 px-4 text-white border-1 border-zinc-600 outline-none resize-none overflow-y-hidden py-[14px]"
-              placeholder={`@${chatUsers[0]?.user.name}에 메시지 보내기`}
-              value={message}
-              onChange={(e) => {
-                setMessage(e.target.value);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleMessageSubmit(e);
-                }
-              }}
-            />
+            <div className="flex">
+              <textarea
+                ref={textareaRef}
+                rows={1}
+                className="w-full min-h-[52px]  rounded-l-lg bg-zinc-700 px-4 text-white border-1 border-zinc-600 outline-none resize-none overflow-y-hidden py-[14px]"
+                placeholder={`@${chatUsers[0]?.user.name}에 메시지 보내기`}
+                value={message}
+                onChange={(e) => {
+                  setMessage(e.target.value);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleMessageSubmit(e);
+                  }
+                }}
+              />
+              <div className="bg-zinc-700 border-r-1 border-y-1 rounded-r-md border-zinc-600 py-[14px] px-4 text-zinc-400 select-none">
+                <Popover
+                  isOpen={emojiBox}
+                  padding={10}
+                  boundaryInset={10}
+                  positions={["bottom", "right", "left"]}
+                  boundaryElement={chatBox.current}
+                  content={({ nudgedLeft, nudgedTop }) => (
+                    <>
+                      <EmojiBox setEmojiBox={setEmojiBox} />
+                    </>
+                  )}
+                >
+                  <button
+                    type="button"
+                    className="cursor-pointer"
+                    onClick={() => setEmojiBox(!emojiBox)}
+                  >
+                    <FontAwesomeIcon icon={faSmile} />
+                  </button>
+                </Popover>
+              </div>
+            </div>
           </div>
         </div>
         {showProfile && <BigProfileCard userId={chatUsers[0]?.user.id} />}
