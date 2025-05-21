@@ -36,6 +36,8 @@
     "react-split-pane": "^2.0.3",
     "react-textarea-autosize": "^8.5.9",
     "react-tiny-popover": "^8.1.6",
+    "react-virtual": "^2.10.4",
+    "react-virtualized": "^9.22.6",
     "socket.io-client": "^4.8.1",
     "tailwindcss": "^4.1.3"
   },

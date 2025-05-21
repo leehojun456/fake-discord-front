@@ -1,71 +1,81 @@
-import {
-  faChevronCircleRight,
-  faChevronRight,
-} from "@fortawesome/free-solid-svg-icons";
+import { faChevronRight } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { drop } from "lodash";
-import React, { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import EmojiCategory from "./EmojiCategory";
+import Emojis from "./Emojis";
+import { useVirtual } from "react-virtual";
 
-const EmojiBoxCategory = ({ category, emojis, onEmojiClick }) => {
-  const emojiId = category.emojis[0]; // 예: "8ball"
-  const emojiObj = emojis?.[emojiId];
-  const currentEmojis = Object.values(emojis).filter((emoji) =>
-    category.emojis.includes(emoji.id)
-  );
-  const [dropdown, setDropdown] = useState(false);
+const EmojiBoxCategory = ({ data }) => {
+  const parentRef = useRef(null);
+  const [openCategories, setOpenCategories] = useState({});
 
-  console.log(category);
-  console.log(currentEmojis);
+  const toggleCategory = (id) => {
+    setOpenCategories((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
+  // flatItems 배열 생성
+  const flatItems = [];
+  data.categories.forEach((category) => {
+    flatItems.push({ type: "header", category });
+
+    if (openCategories[category.id]) {
+      const skins = category.emojis.flatMap(
+        (id) =>
+          data.emojis[id]?.skins.map((skin) => ({
+            emoji: data.emojis[id],
+            skin,
+          })) ?? []
+      );
+
+      for (let i = 0; i < skins.length; i += 9) {
+        flatItems.push({
+          type: "grid",
+          category,
+          chunk: skins.slice(i, i + 9),
+        });
+      }
+    }
+  });
+
+  const rowVirtualizer = useVirtual({
+    size: flatItems.length,
+    parentRef,
+    estimateSize: useCallback(() => 48, []),
+    overscan: 5,
+  });
 
   return (
     <>
-      <div className="">
-        <button
-          type="button"
-          className="flex items-center gap-4 cursor-pointer w-fit hover:text-white group"
-          key={category.id}
-          onClick={() => {
-            setDropdown((prev) => !prev);
-          }}
-        >
-          <div className="flex gap-2">
-            <div
-              className={`flex ${
-                !dropdown && "grayscale"
-              }  group-hover:grayscale-0 transition-all duration-200`}
-            >
-              {emojiObj?.skins[0].native ?? "❓"}
-            </div>
-            <div className="text-sm">{category.id}</div>
-          </div>
-          <div className="flex items-center">
-            <FontAwesomeIcon icon={faChevronRight} size="xs" />
-          </div>
-        </button>
-        {dropdown && (
-          <div className="grid grid-cols-9">
-            {currentEmojis.map((emoji) => {
-              return (
-                <React.Fragment key={emoji.id}>
-                  {emoji.skins.map((skin, index) => {
-                    return (
-                      <button
-                        key={index}
-                        type="button"
-                        className="flex items-center gap-4 cursor-pointer hover:text-white group aspect-square w-full justify-center text-2xl"
-                        onClick={() => {
-                          onEmojiClick(emoji);
-                        }}
-                      >
-                        <div>{skin.native}</div>
-                      </button>
-                    );
-                  })}
-                </React.Fragment>
-              );
-            })}
-          </div>
-        )}
+      <div
+        ref={parentRef}
+        style={{
+          height: rowVirtualizer.totalSize,
+          width: "100%",
+          position: "relative",
+        }}
+      >
+        {rowVirtualizer.virtualItems.map((virtualRow) => {
+          const item = flatItems[virtualRow.index];
+
+          return (
+            <Emojis
+              key={virtualRow.key}
+              ref={virtualRow.measureRef}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                transform: `translateY(${virtualRow.start}px)`,
+              }}
+              item={item}
+              toggleCategory={toggleCategory}
+            />
+          );
+        })}
       </div>
     </>
   );

@@ -1,15 +1,12 @@
 import {
-  faAngleRight,
-  faChevronRight,
   faHandsClapping,
   faMagnifyingGlass,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import data from "@emoji-mart/data";
-import { Picker } from "emoji-mart";
 import EmojiBoxCategory from "./EmojiBoxCategory";
+import { useRef } from "react";
 
 const EmojiBox = ({ setEmojiBox }) => {
   const portalElement = document.getElementById("root");
@@ -18,7 +15,6 @@ const EmojiBox = ({ setEmojiBox }) => {
       setEmojiBox(false);
     }
   };
-
   return (
     <>
       {createPortal(
@@ -52,14 +48,16 @@ const EmojiBox = ({ setEmojiBox }) => {
             sdsd
           </div>
 
-          <div className="w-full h-full bg-zinc-700 flex flex-col gap-2 p-2 overflow-y-scroll">
+          <div className="w-full h-full bg-zinc-700  p-2 overflow-y-scroll">
             {data.categories.map((category, index) => {
               return (
-                <EmojiBoxCategory
-                  key={index}
-                  category={category}
-                  emojis={data.emojis}
-                />
+                <>
+                  <EmojiBoxCategory
+                    key={index}
+                    category={category}
+                    emojis={data.emojis}
+                  />
+                </>
               );
             })}
           </div>
