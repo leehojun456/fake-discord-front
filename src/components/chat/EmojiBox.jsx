@@ -5,8 +5,9 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { createPortal } from "react-dom";
 import data from "@emoji-mart/data";
-import EmojiBoxCategory from "./EmojiBoxCategory";
-import { useRef } from "react";
+import { useCallback, useRef, useState } from "react";
+import { useVirtual } from "react-virtual";
+import Emojis from "./Emojis";
 
 const EmojiBox = ({ setEmojiBox }) => {
   const portalElement = document.getElementById("root");
@@ -15,6 +16,48 @@ const EmojiBox = ({ setEmojiBox }) => {
       setEmojiBox(false);
     }
   };
+
+  const parentRef = useRef(null);
+  const [openCategories, setOpenCategories] = useState({});
+
+  const toggleCategory = (id) => {
+    setOpenCategories((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
+  // flatItems 배열 생성
+  const flatItems = [];
+  data.categories.forEach((category) => {
+    flatItems.push({ type: "header", category });
+
+    if (openCategories[category.id]) {
+      const skins = category.emojis.flatMap(
+        (id) =>
+          data.emojis[id]?.skins.map((skin) => ({
+            emoji: data.emojis[id],
+            skin,
+          })) ?? []
+      );
+
+      for (let i = 0; i < skins.length; i += 9) {
+        flatItems.push({
+          type: "grid",
+          category,
+          chunk: skins.slice(i, i + 9),
+        });
+      }
+    }
+  });
+
+  const rowVirtualizer = useVirtual({
+    size: flatItems.length,
+    parentRef,
+    estimateSize: useCallback(() => 48, []),
+    overscan: 10,
+  });
+
   return (
     <>
       {createPortal(
@@ -48,18 +91,42 @@ const EmojiBox = ({ setEmojiBox }) => {
             sdsd
           </div>
 
-          <div className="w-full h-full bg-zinc-700  p-2 overflow-y-scroll">
-            {data.categories.map((category, index) => {
-              return (
-                <>
-                  <EmojiBoxCategory
-                    key={index}
-                    category={category}
-                    emojis={data.emojis}
+          <div
+            ref={parentRef}
+            style={{
+              height: 400, // 또는 원하는 고정 높이
+              overflowY: "auto",
+            }}
+            className="w-full bg-zinc-700 p-2"
+          >
+            <div
+              ref={parentRef}
+              style={{
+                height: rowVirtualizer.totalSize,
+                width: "100%",
+                position: "relative",
+              }}
+            >
+              {rowVirtualizer.virtualItems.map((virtualRow) => {
+                const item = flatItems[virtualRow.index];
+                return (
+                  <Emojis
+                    key={virtualRow.key}
+                    ref={virtualRow.measureRef}
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      transform: `translateY(${virtualRow.start}px)`,
+                    }}
+                    item={item}
+                    toggleCategory={toggleCategory}
+                    data={data}
                   />
-                </>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>

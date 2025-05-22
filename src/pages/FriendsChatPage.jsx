@@ -29,6 +29,7 @@ import Messages from "../components/chat/messages";
 import { format, formatDate } from "date-fns";
 import { Popover } from "react-tiny-popover";
 import EmojiBox from "../components/chat/EmojiBox";
+import data from "@emoji-mart/data";
 
 const FriendsChatPage = () => {
   const [showProfile, setShowProfile] = useState(false);
@@ -116,12 +117,6 @@ const FriendsChatPage = () => {
       socket.off("personalChannelResponse", handleReceiveMessage);
     };
   }, [socket]);
-
-  useEffect(() => {
-    const textarea = textareaRef.current;
-    textarea.style.height = "auto"; // 높이를 초기화
-    textarea.style.height = `${textarea.scrollHeight}px`; // 새로운 높이 설정
-  }, [message]);
 
   // 스크롤 감지
   const ScrollDetector = () => {
@@ -229,6 +224,63 @@ const FriendsChatPage = () => {
     [loading] // fetchMessages는 필요 없음 (async 함수는 불변)
   );
 
+  const handleInput = (e) => {
+    const editor = e.currentTarget;
+    const text = editor.innerText;
+    setMessage(text); // 전송용 상태에는 :emoji: 형태 유지
+
+    const emojiRegex = /:([a-zA-Z0-9_+-]+):/g;
+    let match, lastMatch;
+
+    while ((match = emojiRegex.exec(text)) !== null) {
+      lastMatch = match;
+    }
+
+    if (!lastMatch) return;
+
+    const emojiName = lastMatch[1];
+    const emoji = data.emojis[emojiName];
+    if (!emoji) return;
+
+    const fullMatch = lastMatch[0]; // 예: ":smile:"
+
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+
+    const range = sel.getRangeAt(0);
+    const focusNode = sel.focusNode;
+    if (!focusNode || focusNode.nodeType !== Node.TEXT_NODE) return;
+
+    const nodeText = focusNode.nodeValue;
+    const emojiIndex = nodeText.lastIndexOf(fullMatch);
+    if (emojiIndex === -1) return;
+
+    const beforeText = nodeText.slice(0, emojiIndex);
+    const afterText = nodeText.slice(emojiIndex + fullMatch.length);
+
+    const beforeNode = document.createTextNode(beforeText);
+
+    const emojiSpan = document.createElement("span");
+    emojiSpan.innerText = emoji.skins[0].native;
+    emojiSpan.className = "emoji";
+    emojiSpan.setAttribute("data-key", fullMatch);
+    emojiSpan.contentEditable = "false"; // 이모지는 수정 안 되게
+
+    const afterNode = document.createTextNode(afterText || "\u00A0");
+
+    // 기존 텍스트 노드 삭제 후 삽입
+    const parent = focusNode.parentNode;
+    parent.replaceChild(afterNode, focusNode);
+    parent.insertBefore(emojiSpan, afterNode);
+    parent.insertBefore(beforeNode, emojiSpan);
+
+    // 커서 옮기기
+    const newRange = document.createRange();
+    newRange.setStart(afterNode, afterNode.length);
+    newRange.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(newRange);
+  };
   return (
     <>
       <div className="flex h-full max-h-[50px] border-b-1 border-zinc-700 text-white items-center justify-between px-8 py-2 gap-6">
@@ -348,22 +400,30 @@ const FriendsChatPage = () => {
               </button>
             )}
             <div className="flex">
-              <textarea
-                ref={textareaRef}
-                rows={1}
-                className="w-full min-h-[52px]  rounded-l-lg bg-zinc-700 px-4 text-white border-1 border-zinc-600 outline-none resize-none overflow-y-hidden py-[14px]"
+              <div
+                className="w-full min-h-[52px] rounded-l-lg bg-zinc-700 px-4 text-white border border-zinc-600 outline-none resize-none overflow-y-hidden py-[14px] block relative"
                 placeholder={`@${chatUsers[0]?.user.name}에 메시지 보내기`}
-                value={message}
-                onChange={(e) => {
-                  setMessage(e.target.value);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleMessageSubmit(e);
-                  }
-                }}
-              />
+              >
+                <span
+                  contentEditable={true}
+                  suppressContentEditableWarning={true}
+                  onInput={(e) => {
+                    handleInput(e);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleMessageSubmit(e);
+                    }
+                  }}
+                ></span>
+                {message === "" && (
+                  <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 select-none">
+                    @{chatUsers[0]?.user.name}에 메시지 보내기
+                  </span>
+                )}
+              </div>
+
               <div className="bg-zinc-700 border-r-1 border-y-1 rounded-r-md border-zinc-600 py-[14px] px-4 text-zinc-400 select-none">
                 <Popover
                   isOpen={emojiBox}

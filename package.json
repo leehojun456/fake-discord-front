@@ -30,6 +30,7 @@
     "react": "^19.0.0",
     "react-advanced-cropper": "^0.20.1",
     "react-dom": "^19.0.0",
+    "react-emoji-render": "^2.0.1",
     "react-modal": "^3.16.3",
     "react-npm": "^2.6.1",
     "react-router-dom": "^7.5.0",
