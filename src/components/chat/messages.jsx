@@ -139,7 +139,7 @@ const Messages = ({
         }}
       >
         <div
-          className={`w-[40px]  min-w-[40px]  rounded-full bg-amber-400 mr-2 cursor-pointer overflow-hidden ${
+          className={`w-[40px]  min-w-[40px]  rounded-full bg-amber-400 mx-2 cursor-pointer overflow-hidden ${
             index !== 0 && block === false
               ? "invisible h-[0px]"
               : "visible h-[40px]"

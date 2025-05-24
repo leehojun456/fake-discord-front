@@ -34,6 +34,7 @@ function Linkify({ text, id }) {
             const res = await axios.get(
               `/og-preview?url=${encodeURIComponent(href)}`
             );
+            console.log("parts", res);
             const og = res;
             if (og?.title || og?.image) {
               setLinkData((prev) => ({ ...prev, [href]: { type: "og", og } }));
@@ -78,7 +79,7 @@ function Linkify({ text, id }) {
 
           if (data.type === "image") {
             return (
-              <div key={idx} className="my-2">
+              <div key={idx} className="my-2 flex flex-col">
                 {originalLink}
 
                 <img

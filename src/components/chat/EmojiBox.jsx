@@ -94,13 +94,11 @@ const EmojiBox = ({ setEmojiBox }) => {
           <div
             ref={parentRef}
             style={{
-              height: 400, // 또는 원하는 고정 높이
               overflowY: "auto",
             }}
             className="w-full bg-zinc-700 p-2"
           >
             <div
-              ref={parentRef}
               style={{
                 height: rowVirtualizer.totalSize,
                 width: "100%",

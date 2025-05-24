@@ -15,7 +15,7 @@ const Emojis = forwardRef(({ item, toggleCategory, style, data }, ref) => {
           onClick={() => toggleCategory(category.id)}
         >
           <div className="flex gap-2">
-            <div className="grayscale-0">{emoji}</div>
+            <div className="grayscale-100">{emoji}</div>
             <div className="text-sm">{category.id}</div>
           </div>
           <div className="flex items-center">
