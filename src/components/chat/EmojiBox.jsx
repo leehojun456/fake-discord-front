@@ -58,6 +58,27 @@ const EmojiBox = ({ setEmojiBox }) => {
     overscan: 10,
   });
 
+  const handleInputEmoji = (emoji, skin) => {
+    insertEmojiAtCaret(skin);
+  };
+
+  const insertEmojiAtCaret = (emoji) => {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+
+    const range = selection.getRangeAt(0);
+    range.deleteContents(); // 현재 선택 영역(혹시 있으면)을 지움
+
+    const node = document.createTextNode(emoji.native); // 이모지 텍스트 노드 생성
+    range.insertNode(node); // 커서 위치에 이모지 삽입
+
+    // 커서를 이모지 뒤에 위치시키기
+    range.setStartAfter(node);
+    range.setEndAfter(node);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  };
+
   return (
     <>
       {createPortal(
@@ -121,6 +142,7 @@ const EmojiBox = ({ setEmojiBox }) => {
                     item={item}
                     toggleCategory={toggleCategory}
                     data={data}
+                    onHandle={handleInputEmoji}
                   />
                 );
               })}

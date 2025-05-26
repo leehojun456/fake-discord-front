@@ -1,6 +1,8 @@
 import { Popover } from "react-tiny-popover";
 import ProfileCard from "../user/ProfileCard";
 import { createPortal } from "react-dom";
+import { useQuery } from "@tanstack/react-query";
+import axios from "../../axios";
 
 const ChatProfileImage = ({
   userChat,
@@ -8,6 +10,17 @@ const ChatProfileImage = ({
   setShowProfileCard,
 }) => {
   const portalElement = document.getElementById("root");
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["avatar", userChat?.userId],
+    enabled: !!userChat?.userId,
+    refetchOnMount: false,
+    queryFn: async () => {
+      const response = await axios.get(`/user/${userChat.userId}/avatar`);
+      return response;
+    },
+  });
+
   return (
     <>
       <Popover
@@ -26,13 +39,13 @@ const ChatProfileImage = ({
       >
         <button
           type="button"
-          className={`w-[40px]  min-w-[40px]  rounded-full bg-amber-400 mr-2 cursor-pointer overflow-hidden`}
+          className={`w-[40px]  min-w-[40px]  rounded-full bg-amber-400 mr-2 cursor-pointer overflow-hidden absolute`}
           onClick={() => {
             console.log("프로필 클릭");
             setShowProfileCard(true);
           }}
         >
-          <img src={userChat?.avatar} />
+          <img src={data?.avatar} />
         </button>
       </Popover>
       {showProfileCard && (

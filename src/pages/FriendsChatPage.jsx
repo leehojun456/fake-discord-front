@@ -11,14 +11,18 @@ import { HeaderMessageContext } from "../contexts/HeaderMessageContext";
 import { WebSocketContext } from "../contexts/WebSocketContext";
 import axios from "../axios";
 import { AuthContext } from "../contexts/AuthContext";
-import { formatYYMMDate } from "../utils/dateFormat";
-import DataDivider from "../components/chat/dateDivider";
+
 import BigProfileCard from "../components/user/BigProfileCard";
-import Messages from "../components/chat/messages";
-import { format } from "date-fns";
+
+import { differenceInDays, format } from "date-fns";
 
 import ChatInputBox from "../components/chat/ChatInputBox";
 import { Virtuoso } from "react-virtuoso";
+import { lastIndexOf } from "lodash";
+import DataDivider from "../components/chat/dateDivider";
+import { ko } from "date-fns/locale";
+import ChatProfileImage from "../components/chat/chatProfileImage";
+import Messages from "../components/chat/messages";
 
 const FriendsChatPage = () => {
   const [showProfile, setShowProfile] = useState(false);
@@ -34,6 +38,7 @@ const FriendsChatPage = () => {
   const [replyId, setReplyId] = useState(false);
   const [isScrolling, setIsScrolling] = useState(false);
   const [isloading, setIsLoading] = useState(true);
+  const [fetchLoading, setFetchLoading] = useState(false);
 
   useEffect(() => {
     // 헤더 메시지와 아이콘을 설정합니다.
@@ -130,14 +135,13 @@ const FriendsChatPage = () => {
   };
 
   const fetchMessages = async (cursor, sort) => {
-    console.log("fetchMessages", cursor, sort);
     try {
       const response = await axios.get(
         `/personalchannels/${channelId}/messages`,
         {
           params: {
             cursor,
-            limit: 10,
+            limit: 40,
             sort: sort || "desc",
           },
         }
@@ -146,19 +150,11 @@ const FriendsChatPage = () => {
       if (response.length === 0) return; // 더 이상 불러올 데이터 없음
 
       response.reverse(); // 최신 메시지가 아래로 가도록 반전
+      console.log("불러온 메시지", response);
 
       setChat((prev) => [...response, ...prev]);
+
       setIsLoading(false);
-      setTimeout(() => {
-        // 스크롤을 맨 아래로 이동
-        if (scrollRef.current) {
-          scrollRef.current.scrollToIndex({
-            index: 0,
-            align,
-            behavior,
-          });
-        }
-      }, 100);
     } catch (error) {
       console.error("메시지 불러오기 실패:", error);
     }
@@ -208,51 +204,40 @@ const FriendsChatPage = () => {
         </div>
       </div>
       {/* 채팅창 영역 */}
-      <div className="flex flex-1 overflow-hidden select-text">
-        <div className="w-full flex flex-col" ref={chatBox}>
+      <div className="flex overflow-hidden select-text flex-1">
+        <div className="w-full flex flex-col text-zinc-300" ref={chatBox}>
           {isloading && <div className="w-full h-full" />}
-
-          <Virtuoso
-            data={chat}
-            ref={scrollRef}
-            increaseViewportBy={5}
-            itemContent={(index, userChat) => {
-              return (
-                <div
-                  key={index}
-                  data-id={userChat.latestMessage}
-                  className={`flex flex-col py-2 text-white ${
-                    isScrolling && "pointer-events-none"
-                  }`}
-                >
-                  {/* 날짜가 달라지면 구분선 추가 */}
-                  <DataDivider
-                    previousDate={formatYYMMDate(chat[index - 1]?.timeGroup)}
-                    date={formatYYMMDate(userChat.timeGroup)}
+          {!isloading && (
+            <Virtuoso
+              data={chat}
+              ref={scrollRef}
+              increaseViewportBy={5}
+              itemContent={(index, item) => {
+                return (
+                  <Messages
+                    item={item}
+                    index={index}
+                    chat={chat}
+                    chatBoxRef={chatBox}
                   />
-
-                  {userChat.messages.map((message, idx) => (
-                    <Messages
-                      message={message}
-                      userChat={userChat}
-                      key={message.id || idx}
-                      index={idx}
-                      chatBox={chatBox}
-                      block={false}
-                      setMessage={setMessage}
-                      setChat={setChat}
-                      setReplyId={setReplyId}
-                      replyId={replyId}
-                    />
-                  ))}
-                </div>
-              );
-            }}
-            style={{ height: "100%", overflow: "auto", margin: "4px" }}
-            alignToBottom
-            followOutput={true}
-            isScrolling={(scrolling) => setIsScrolling(scrolling)}
-          />
+                );
+              }}
+              style={{
+                height: "100%",
+                overflow: "auto",
+                margin: "4px",
+              }}
+              alignToBottom
+              followOutput={true}
+              isScrolling={(scrolling) => setIsScrolling(scrolling)}
+              // rangeChanged={(range) => {
+              //   if (range.startIndex === 0 && !fetchLoading) {
+              //     setFetchLoading(true);
+              //     fetchMessages(chat[0]?.latestMessage, "desc");
+              //   }
+              // }}
+            />
+          )}
 
           <div className="w-full p-4">
             {replyId && (

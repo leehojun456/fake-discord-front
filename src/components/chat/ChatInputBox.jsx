@@ -18,7 +18,7 @@ const ChatInputBox = ({
   const handleInput = (e) => {
     const editor = e.currentTarget;
     const text = editor.innerText;
-    setMessage(text); // 전송용 상태에는 :emoji: 형태 유지
+    setMessage(text); // 상태에는 여전히 ":emoji:" 형태 저장
 
     const emojiRegex = /:([a-zA-Z0-9_+-]+):/g;
     let match, lastMatch;
@@ -38,6 +38,7 @@ const ChatInputBox = ({
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) return;
 
+    const range = sel.getRangeAt(0);
     const focusNode = sel.focusNode;
     if (!focusNode || focusNode.nodeType !== Node.TEXT_NODE) return;
 
@@ -45,29 +46,31 @@ const ChatInputBox = ({
     const emojiIndex = nodeText.lastIndexOf(fullMatch);
     if (emojiIndex === -1) return;
 
-    const beforeText = nodeText.slice(0, emojiIndex);
-    const afterText = nodeText.slice(emojiIndex + fullMatch.length);
+    // 범위 설정: 이모지 텍스트 (:smile:) 위치에 정확히 적용
+    const emojiRange = document.createRange();
+    emojiRange.setStart(focusNode, emojiIndex);
+    emojiRange.setEnd(focusNode, emojiIndex + fullMatch.length);
 
-    const beforeNode = document.createTextNode(beforeText);
-
+    // 이모지 span 만들기
     const emojiSpan = document.createElement("span");
     emojiSpan.innerText = emoji.skins[0].native;
     emojiSpan.className = "emoji";
     emojiSpan.setAttribute("data-key", fullMatch);
-    emojiSpan.contentEditable = "false"; // 이모지는 수정 안 되게
+    emojiSpan.contentEditable = "false";
 
-    const afterNode = document.createTextNode(afterText || "\u00A0");
+    // 이모지로 교체
+    emojiRange.deleteContents();
+    emojiRange.insertNode(emojiSpan);
 
-    // 기존 텍스트 노드 삭제 후 삽입
-    const parent = focusNode.parentNode;
-    parent.replaceChild(afterNode, focusNode);
-    parent.insertBefore(emojiSpan, afterNode);
-    parent.insertBefore(beforeNode, emojiSpan);
+    // 이모지 뒤에 공백 추가 (커서 이동용)
+    const space = document.createTextNode("\u00A0");
+    emojiSpan.after(space);
 
-    // 커서 옮기기
+    // 커서를 공백 뒤로 이동
     const newRange = document.createRange();
-    newRange.setStart(afterNode, afterNode.length);
+    newRange.setStart(space, 1);
     newRange.collapse(true);
+
     sel.removeAllRanges();
     sel.addRange(newRange);
   };
@@ -94,12 +97,15 @@ const ChatInputBox = ({
           }}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
+              spanRef.current.innerText = "";
+              const text = e.currentTarget.innerText;
+              setMessage(text);
               e.preventDefault();
               onSubmit(e);
             }
           }}
         ></span>
-        {message === "" && (
+        {spanRef?.current?.innerText === "" && (
           <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 select-none">
             @{chatUsers[0]?.user.name}에 메시지 보내기
           </span>
@@ -110,9 +116,13 @@ const ChatInputBox = ({
           isOpen={emojiBox}
           padding={10}
           boundaryInset={10}
-          positions={["right", "left"]}
+          positions={["top", "right", "left"]}
+          transform={{ top: -10 }}
+          transformMode="position"
           boundaryElement={chatBox.current}
-          content={() => <EmojiBox setEmojiBox={setEmojiBox} />}
+          content={() => (
+            <EmojiBox setEmojiBox={setEmojiBox} spanRef={spanRef} />
+          )}
         >
           <button
             type="button"

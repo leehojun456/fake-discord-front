@@ -143,7 +143,7 @@ function Linkify({ text, id }) {
           return originalLink;
         } else {
           return (
-            <pre className="break-all" data-key={id}>
+            <pre className="break-all" data-key={id} key={idx}>
               {part}
             </pre>
           );
