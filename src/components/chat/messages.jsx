@@ -1,4 +1,10 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { formatDate } from "../../utils/dateFormat";
 import ChatName from "./chatName";
 import ChatProfileImage from "./chatProfileImage";
@@ -17,11 +23,23 @@ import { useParams } from "react-router-dom";
 import { set } from "lodash";
 import ChatDeleteDialog from "../dialog/chat/ChatDeleteDialog";
 import DialogLayout from "../../layouts/DialogLayout";
-import { differenceInDays, format } from "date-fns";
+import { format } from "date-fns";
 import DataDivider from "./dateDivider";
-import { ko } from "date-fns/locale";
+import { ko, vi } from "date-fns/locale";
+import CircleProfileWithStatus from "../user/CircleProfileWithStatus";
+import ProfileCard from "../user/ProfileCard";
+import { ModalContext } from "../../contexts/ModalContext";
+import UserOverlay from "../dialog/userOverlay";
 
-const Messages = ({ item, index, chat, chatBoxRef }) => {
+const Messages = ({
+  item,
+  virtualIndex,
+  chat,
+  setChat,
+  chatBoxRef,
+  firstItemIndex,
+  isScrolling,
+}) => {
   const [reactionDialog, setReactionDialog] = useState(false);
   const [contextMenu, setContextMenu] = useState(false);
   const [showProfileCard, setShowProfileCard] = useState(false);
@@ -39,13 +57,19 @@ const Messages = ({ item, index, chat, chatBoxRef }) => {
   const [deleteModal, setDeleteModal] = useState(false);
   const [replyId, setReplyId] = useState(false);
 
-  const currentDate = format(item.createdAt, "yyyyMMdd");
-  const prevDate =
-    index > 0 ? format(chat[index - 1].createdAt, "yyyyMMdd") : null;
+  const realIndex = virtualIndex - firstItemIndex;
+  const prevItem = chat[realIndex - 1];
 
-  const currentDateTime = format(item.createdAt, "yyyyMMddHHmm");
-  const prevDateTime =
-    index > 0 ? format(chat[index - 1].createdAt, "yyyyMMddHHmm") : null;
+  const showDateDivider =
+    !prevItem ||
+    format(prevItem.createdAt, "yyyy-MM-dd") !==
+      format(item.createdAt, "yyyy-MM-dd");
+
+  const showMeta =
+    !prevItem ||
+    prevItem.user.id !== item.user.id ||
+    format(prevItem.createdAt, "yyyy-MM-dd HH:mm") !==
+      format(item.createdAt, "yyyy-MM-dd HH:mm");
 
   const handleBackdropClick = (e) => {
     if (e.target === e.currentTarget) {
@@ -87,337 +111,247 @@ const Messages = ({ item, index, chat, chatBoxRef }) => {
     setIsEdit(false);
   };
 
-  // // 메세지 삭제
-  const handleMessageDelete = () => {
+  // 메세지 삭제
+  const deleteMessage = async () => {
     try {
-      axios.delete(`/personalchannels/${channelId}/messages/${message.id}`);
-
-      setChat((prevChats) =>
-        prevChats.map((userChat) => ({
-          ...userChat,
-          messages: userChat.messages.filter((msg) => msg.id !== message.id),
-        }))
-      );
-
-      setDeleteModal(false);
+      await axios.delete(`/personalchannels/${channelId}/messages/${item.id}`);
+      console.log("메세지 삭제 완료", item);
     } catch (error) {
       console.error("메세지 삭제 실패", error);
     }
-    // Handle message deletion logic here
+    // 채팅에서 해당 메세지 제거
+    setChat((prevChat) => {
+      return prevChat.filter((msg) => msg.id !== item.id);
+    });
     setIsEdit(false);
+    setDeleteModal(false);
   };
 
-  // // 메세지 줄 수 계산
-  // const getLineCount = (text) => {
-  //   return text.split("\n").length;
-  // };
+  const handleShiftDelete = () => {
+    deleteMessage();
+  };
 
-  // useLayoutEffect(() => {
-  //   if (textareaRef.current === null) return;
-  //   const textarea = textareaRef.current;
-  //   textarea.style.height = "auto"; // 높이를 초기화
-  //   textarea.style.height = `${textarea.scrollHeight}px`; // 새로운 높이 설정
-  // }, [editMessage]);
+  const handleMessageDelete = (e) => {
+    console.log("메세지 삭제 시도", item);
+
+    if (e.shiftKey) {
+      handleShiftDelete();
+    } else {
+      setDeleteModal(true);
+    }
+  };
+
+  const handleProfileCardClose = () => {
+    setShowProfileCard(false);
+    setShowProfileCardName(false);
+  };
 
   return (
     <>
-      <div className={`${currentDateTime !== prevDateTime && "mt-4"} `}>
-        {/*메시지의 날짜가 이전 메시지와 다를 때 날짜 구분선을 표시합니다.*/}
-        {currentDate !== prevDate && <DataDivider date={item.createdAt} />}
-        <div className="hover:bg-zinc-700">
-          {currentDateTime !== prevDateTime && (
-            <div className="relative left- top-0 mx-4">
-              <ChatProfileImage userChat={item} />
-            </div>
+      <div className={`${isScrolling && "pointer-events-none"}`}>
+        {showDateDivider && <DataDivider date={item.createdAt} />}
+        <div
+          className="relative"
+          onMouseEnter={() => {
+            setReactionDialog(true);
+          }}
+          onMouseLeave={() => {
+            setReactionDialog(false);
+          }}
+        >
+          {showMeta && (
+            <Popover
+              isOpen={showProfileCard}
+              content={
+                <ProfileCard
+                  userId={item.user.id}
+                  onClose={handleProfileCardClose}
+                />
+              }
+              positions={"right"}
+              padding={10}
+              boundaryInset={10}
+              align="start"
+            >
+              <button
+                type="button"
+                className="cursor-pointer absolute"
+                onClick={() => setShowProfileCard(true)}
+              >
+                <CircleProfileWithStatus
+                  user={item.user}
+                  height={40}
+                  width={40}
+                />
+              </button>
+            </Popover>
           )}
-          <div
-            className="px-16 relative"
-            onMouseEnter={() => setReactionDialog(true)}
-            onMouseLeave={() => {
-              setReactionDialog(false);
-              setContextMenu(false);
-            }}
-          >
-            {/* 메시지의 시간대가 이전 메시지와 다를 때 표시하는 부분 */}
-            {currentDateTime !== prevDateTime && (
-              <div className="flex">
-                <div>{item.name}</div>
-                <div className="flex text-xs text-zinc-400">
-                  {differenceInDays(new Date(), new Date(item.createdAt)) >=
-                  1 ? (
-                    <div>
-                      {format(item.createdAt, `yyyy-MM-dd a h:mm`, {
-                        locale: ko,
-                      })}
+
+          {/* 이전 문자와 날짜가 다르면 이름과 날짜를 표시 */}
+          <div className="pl-[50px] hover:bg-zinc-700">
+            {showMeta && (
+              <div className="flex items-center gap-2 mt-1">
+                <Popover
+                  isOpen={showProfileCardName}
+                  content={
+                    <ProfileCard
+                      userId={item.user.id}
+                      onClose={handleProfileCardClose}
+                    />
+                  }
+                  positions={"right"}
+                  padding={10}
+                  boundaryInset={10}
+                  align="start"
+                >
+                  <button
+                    type="button"
+                    className=" cursor-pointer hover:underline"
+                    onClick={() => setShowProfileCardName(true)}
+                  >
+                    {item.user.name}
+                  </button>
+                </Popover>
+                <div className="text-xs text-zinc-500 cursor-default relative group">
+                  {format(item.createdAt, `yyyy-MM-dd a h:mm`, {
+                    locale: ko,
+                  })}
+                  <div className="absolute hidden group-hover:block top-8 left-1/2 -translate-x-1/2 z-10">
+                    <div className="bg-zinc-700 p-1 px-4 text-zinc-300 border-1 border-zinc-600 rounded-md shadow-md relative">
+                      <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-zinc-700  border-l border-t border-zinc-600  rotate-45" />
+                      <div className="whitespace-nowrap text-sm">
+                        {format(
+                          item.createdAt,
+                          `yyyy년 MM월 dd일 EEEE a h:mm`,
+                          {
+                            locale: ko,
+                          }
+                        )}
+                      </div>
                     </div>
-                  ) : (
-                    <div>
-                      {format(item.createdAt, `a h:mm`, {
-                        locale: ko,
-                      })}
-                    </div>
-                  )}
+                  </div>
                 </div>
               </div>
             )}
             <div>{item.content}</div>
-            {reactionDialog && !isEdit && (
-              <div className="absolute bg-zinc-700 p-2 rounded-md border-1 border-zinc-600 w-fit right-4 -top-[16px] h-[40px] flex gap-2 shadow-md select-none">
-                <button
-                  type="button"
-                  className="text-zinc-400 text-md cursor-pointer hover:text-white w-[20px]"
-                  onClick={() => {
-                    setReplyId(message.id);
-                  }}
-                >
-                  <FontAwesomeIcon icon={faComments} />
-                </button>
-                <button
-                  type="button"
-                  className="text-zinc-400 text-md cursor-pointer hover:text-white w-[20px]"
-                >
-                  <FontAwesomeIcon icon={faArrowUpRightFromSquare} />
-                </button>
-                <button
-                  type="button"
-                  className="text-zinc-400 text-md cursor-pointer hover:text-white w-[20px]"
-                  onClick={(e) => {
-                    handleContextMenuClick(e);
-                  }}
-                >
-                  <FontAwesomeIcon icon={faEllipsis} />
-                </button>
-                {contextMenu && (
-                  <Popover
-                    isOpen={contextMenu}
-                    content={({ nudgedLeft, nudgedTop }) => (
-                      <>
-                        {createPortal(
-                          <div
-                            className="fixed w-dvw h-dvh top-0 left-0"
-                            onClick={handleBackdropClick}
-                          />,
-                          portalElement
-                        )}
+          </div>
+          {reactionDialog && !isEdit && (
+            <div className="absolute bg-zinc-700 p-2 rounded-md border-1 border-zinc-600 w-fit right-4 -top-[16px] h-[40px] flex gap-2 shadow-md select-none">
+              <button
+                type="button"
+                className="text-zinc-400 text-md cursor-pointer hover:text-white w-[20px]"
+                onClick={() => {
+                  setReplyId(message.id);
+                }}
+              >
+                <FontAwesomeIcon icon={faComments} />
+              </button>
+              <button
+                type="button"
+                className="text-zinc-400 text-md cursor-pointer hover:text-white w-[20px]"
+              >
+                <FontAwesomeIcon icon={faArrowUpRightFromSquare} />
+              </button>
+              <button
+                type="button"
+                className="text-zinc-400 text-md cursor-pointer hover:text-white w-[20px]"
+                onClick={(e) => {
+                  handleContextMenuClick(e);
+                }}
+              >
+                <FontAwesomeIcon icon={faEllipsis} />
+              </button>
+              {contextMenu && (
+                <Popover
+                  isOpen={contextMenu}
+                  content={({ nudgedLeft, nudgedTop }) => (
+                    <>
+                      {createPortal(
+                        <div
+                          className="fixed w-dvw h-dvh top-0 left-0"
+                          onClick={handleBackdropClick}
+                        />,
+                        portalElement
+                      )}
 
-                        <ChatContextMenu
-                          setContextMenu={setContextMenu}
-                          message={item}
-                          setIsEdit={setIsEdit}
-                          setReplyId={setReplyId}
-                          chatBox={chatBoxRef}
-                          onDelete={handleMessageDelete}
-                          setDeleteModal={setDeleteModal}
-                        />
-                      </>
-                    )}
-                    padding={10}
-                    boundaryInset={10}
-                    positions={["bottom", "right", "left"]}
-                    boundaryElement={chatBoxRef.current}
-                  >
-                    <div
-                      className="fixed"
-                      style={{
-                        top: contextMenuPosition.y,
-                        left: contextMenuPosition.x,
-                      }}
-                    />
-                  </Popover>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-      {/* <div
-        data-id={message.id}
-        ref={parentRef}
-        className={`flex gap-2 ${
-          replyId === message.id
-            ? "bg-blue-500/20 border-l-2 border-blue-500"
-            : (reactionDialog || isEdit) && "bg-zinc-700"
-        } relative ${block && "pointer-events-none"}`}
-        onMouseEnter={() => {
-          setReactionDialog(true);
-        }}
-        onMouseLeave={() => {
-          setReactionDialog(false);
-          setContextMenu(false);
-        }}
-        onContextMenu={(e) => {
-          handleContextMenuClick(e);
-        }}
-      >
-        <div
-          className={`w-[40px]  min-w-[40px]  rounded-full bg-amber-400 mx-2 cursor-pointer overflow-hidden ${
-            index !== 0 && block === false
-              ? "invisible h-[0px]"
-              : "visible h-[40px]"
-          }`}
-        >
-          <ChatProfileImage
-            userChat={userChat}
-            setShowProfileCard={setShowProfileCard}
-            showProfileCard={showProfileCard}
-          />
-        </div>
-        <div className="flex flex-col w-full relative">
-          <div
-            className={`flex gap-2 items-center ${
-              index !== 0 && block === false && "hidden"
-            }`}
-          >
-            <ChatName
-              userChat={userChat}
-              setShowProfileCardName={setShowProfileCardName}
-              showProfileCardName={showProfileCardName}
-            />
-            <div
-              className={`text-xs text-zinc-400 ${
-                index !== 0 && block === false && "hidden"
-              }`}
-            >
-              {formatDate(userChat.timeGroup)}
-            </div>
-          </div>
-          {!isEdit && <Linkify text={editMessage} id={message.id} />}
-          {isEdit && (
-            <div className="w-full p-2 flex justify-center flex-col gap-2 h-full">
-              <textarea
-                ref={textareaRef}
-                className="w-full min-h-[52px] h-full rounded-lg bg-zinc-700 px-4 text-white border-1 border-zinc-600 outline-none resize-none py-[14px]"
-                value={editMessage}
-                rows={getLineCount(editMessage)}
-                onChange={(e) => {
-                  setEditMessage(e.target.value);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleMessageSubmit(e);
-                  }
-                }}
-              />
-              <div className="text-xs">
-                {"ESC 키로 "}
-                <button
-                  type="button"
-                  className="text-blue-300 cursor-pointer hover:underline"
-                  onClick={() => {
-                    setIsEdit(false);
-                    setEditMessage(message.content);
-                  }}
+                      <ChatContextMenu
+                        setContextMenu={setContextMenu}
+                        message={item}
+                        setIsEdit={setIsEdit}
+                        setReplyId={setReplyId}
+                        chatBox={chatBoxRef}
+                        onDelete={handleMessageDelete}
+                        setDeleteModal={setDeleteModal}
+                      />
+                    </>
+                  )}
+                  padding={10}
+                  boundaryInset={10}
+                  positions={["bottom", "right", "left"]}
+                  boundaryElement={chatBoxRef.current}
                 >
-                  취소
-                </button>
-                {" • Enter 키로 "}
-                <button
-                  type="button"
-                  className="text-blue-300 cursor-pointer hover:underline"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      handleMessageSubmit();
-                    }
-                  }}
-                  onClick={() => {
-                    handleMessageSubmit();
-                  }}
-                >
-                  전송
-                </button>
-              </div>
+                  <div
+                    className="fixed"
+                    style={{
+                      top: contextMenuPosition.y,
+                      left: contextMenuPosition.x,
+                    }}
+                  />
+                </Popover>
+              )}
             </div>
           )}
         </div>
-        {reactionDialog && !isEdit && (
-          <div className="absolute bg-zinc-700 p-2 rounded-md border-1 border-zinc-600 w-fit right-4 -top-[16px] h-[40px] flex gap-2 shadow-md select-none">
-            <button
-              type="button"
-              className="text-zinc-400 text-md cursor-pointer hover:text-white w-[20px]"
-              onClick={() => {
-                setReplyId(message.id);
-              }}
-            >
-              <FontAwesomeIcon icon={faComments} />
-            </button>
-            <button
-              type="button"
-              className="text-zinc-400 text-md cursor-pointer hover:text-white w-[20px]"
-            >
-              <FontAwesomeIcon icon={faArrowUpRightFromSquare} />
-            </button>
-            <button
-              type="button"
-              className="text-zinc-400 text-md cursor-pointer hover:text-white w-[20px]"
-              onClick={(e) => {
-                handleContextMenuClick(e);
-              }}
-            >
-              <FontAwesomeIcon icon={faEllipsis} />
-            </button>
-            {contextMenu && (
-              <Popover
-                isOpen={contextMenu}
-                content={({ nudgedLeft, nudgedTop }) => (
-                  <>
-                    {createPortal(
-                      <div
-                        className="fixed w-dvw h-dvh top-0 left-0"
-                        onClick={handleBackdropClick}
-                      />,
-                      portalElement
-                    )}
-
-                    <ChatContextMenu
-                      setContextMenu={setContextMenu}
-                      message={message}
-                      setIsEdit={setIsEdit}
-                      setReplyId={setReplyId}
-                      chatBox={chatBox}
-                      onDelete={handleMessageDelete}
-                      setDeleteModal={setDeleteModal}
-                    />
-                  </>
-                )}
-                padding={10}
-                boundaryInset={10}
-                positions={["bottom", "right", "left"]}
-                boundaryElement={chatBox.current}
-              >
-                <div
-                  className="fixed"
-                  style={{
-                    top: contextMenuPosition.y,
-                    left: contextMenuPosition.x,
-                  }}
-                />
-              </Popover>
-            )}
-          </div>
-        )}
       </div>
-
+      {(showProfileCardName || showProfileCard) && (
+        <>
+          {createPortal(
+            <div
+              className="w-dvw h-dvh absolute top-0 left-0"
+              onMouseDown={(e) => {
+                if (e.target === e.currentTarget) {
+                  handleProfileCardClose();
+                }
+              }}
+            ></div>,
+            portalElement
+          )}
+        </>
+      )}
       {deleteModal &&
         createPortal(
           <DialogLayout
             children={
               <ChatDeleteDialog
                 children={
-                  <Messages
-                    message={message}
-                    userChat={userChat}
-                    index={index}
-                    block={true}
-                  />
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <CircleProfileWithStatus
+                        user={item.user}
+                        height={40}
+                        width={40}
+                      />
+                      <div>
+                        <div className="flex gap-2 items-center">
+                          <div>{item.user.name}</div>
+                          <div className="text-sm text-zinc-500">
+                            {format(item.createdAt, `yyyy-MM-dd a h:mm`, {
+                              locale: ko,
+                            })}
+                          </div>
+                        </div>
+                        <div>{item.content}</div>
+                      </div>
+                    </div>
+                  </div>
                 }
-                onDelete={handleMessageDelete}
+                onDelete={deleteMessage}
               />
             }
             setClose={setDeleteModal}
           />,
           portalElement
-        )} */}
+        )}
     </>
   );
 };

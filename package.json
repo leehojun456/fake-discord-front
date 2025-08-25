@@ -19,6 +19,7 @@
     "@tanstack/query-sync-storage-persister": "^5.76.2",
     "@tanstack/react-query": "^5.76.2",
     "@tanstack/react-query-persist-client": "^5.76.2",
+    "@tanstack/react-virtual": "^3.13.9",
     "animate.css": "^4.1.1",
     "axios": "^1.8.4",
     "base-64": "^1.0.0",

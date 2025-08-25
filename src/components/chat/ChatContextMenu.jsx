@@ -20,7 +20,6 @@ const ChatContextMenu = ({
   message,
   setIsEdit,
   chatBox,
-  setDeleteModal,
   onDelete,
   setReplyId,
 }) => {
@@ -87,10 +86,6 @@ const ChatContextMenu = ({
   const handleEdit = () => {
     console.log("메시지 수정하기 클릭");
     setIsEdit(true);
-  };
-
-  const handleDelete = () => {
-    setDeleteModal(true);
   };
 
   return (
@@ -178,11 +173,7 @@ const ChatContextMenu = ({
               type="button"
               className="cursor-pointer w-full flex justify-between text-left bg-zinc-700 hover:bg-red-800/10 rounded-md p-2 hover:text-red-200 text-red-300 "
               onClick={(e) => {
-                if (e.shiftKey) {
-                  onDelete();
-                  return;
-                }
-                handleDelete();
+                onDelete(e);
                 setContextMenu(false);
               }}
             >

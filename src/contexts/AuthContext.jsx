@@ -4,6 +4,7 @@ import axios from "../axios";
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [settingsModal, setSettingsModal] = useState(false);
+
   const [isUserLoading, setIsUserLoading] = useState(true);
 
   useEffect(() => {

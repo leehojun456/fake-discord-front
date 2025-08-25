@@ -12,7 +12,7 @@ export const WebsocketProvider = ({ children }) => {
     const token = localStorage.getItem("accessToken");
 
     if (user) {
-      const newSocket = io("https://fakecord.kr", {
+      const newSocket = io("http://localhost:3000", {
         auth: { token },
       });
 

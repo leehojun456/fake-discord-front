@@ -6,10 +6,11 @@ import AvatarImageChange from "../dialog/AvartarImageChange";
 import { AuthContext } from "../../contexts/AuthContext";
 import BannerImageChange from "../dialog/BannerImageChange";
 import axios from "../../axios";
-import SettingsPage from "../../pages/SettingsPage";
 import CircleProfileWithStatus from "./CircleProfileWithStatus";
+import UserOverlay from "../dialog/userOverlay";
+import { ModalContext } from "../../contexts/ModalContext";
 
-const ProfileCard = ({ userId, isEdit, setShowProfileCard }) => {
+const ProfileCard = ({ userId, isEdit, onClose }) => {
   const [dialog, setDialog] = useState(false);
   const [user, setUser] = useState(null);
   const {
@@ -22,6 +23,8 @@ const ProfileCard = ({ userId, isEdit, setShowProfileCard }) => {
     setDialogComponent(component);
     setDialog(true);
   };
+
+  const { setUserOverlay, setUserOverlayUserId } = useContext(ModalContext);
 
   useEffect(() => {
     console.log("userId", userId);
@@ -60,7 +63,13 @@ const ProfileCard = ({ userId, isEdit, setShowProfileCard }) => {
             <button
               className="bg-amber-100 left-2  border-amber-200 -top-10 cursor-pointer absolute rounded-full overflow-hidden"
               onClick={() => {
-                isEdit && handleClick(<AvatarImageChange setUser={setUser} />);
+                if (isEdit) {
+                  handleClick(<AvatarImageChange setUser={setUser} />);
+                } else {
+                  setUserOverlay(true);
+                  setUserOverlayUserId(user?.id);
+                  onClose();
+                }
               }}
             >
               <CircleProfileWithStatus
@@ -89,7 +98,8 @@ const ProfileCard = ({ userId, isEdit, setShowProfileCard }) => {
                   onClick={() => {
                     if (user?.id === authUser?.id && !isEdit) {
                       setSettingsModal(!settingsModal);
-                      setShowProfileCard(false);
+
+                      onClose();
                     }
                   }}
                 >
